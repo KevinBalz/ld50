@@ -3,6 +3,32 @@
 #include "OpenGLPixelArtDrawer.hpp"
 #include "Font.hpp"
 #include "Renderer.hpp"
+#include <variant>
+
+using DialogCallback = std::function<void()>;
+using DialogPart = std::variant<std::string, DialogCallback>;
+
+class Dialog
+{
+public:
+	template<typename... Ps>
+	Dialog(Ps&&... parts)
+	{
+		(m_parts.push_back(parts),...);
+	}
+
+	DialogPart& GetPart(int index)
+	{
+		return m_parts[index];
+	}
+
+	int GetPartCount()
+	{
+		return m_parts.size();
+	}
+private:
+	std::vector<DialogPart> m_parts;
+};
 
 class DialogSystem
 {
@@ -23,10 +49,10 @@ public:
 		auto& s = Instance();
 		if (IsOpen())
 		{
-			auto fullText = s.m_dialog.size() == s.m_displayed.size();
+			auto fullText = s.m_dialog.size() <= s.m_displayed.size();
 			if (fullText && input->GetKeyDown(tako::Key::L) || input->GetKeyDown(tako::Key::Gamepad_A) && s.closeDown <= 0)
 			{
-				s.m_dialog = "";
+				s.StartDialogPart(s.dialogPart + 1);
 				s.closeDown = s.m_charDelay;
 			}
 			else if (s.closeDown <= 0)
@@ -67,23 +93,42 @@ public:
 		drawer->SetTargetSize(240/2, 135/2);
 	}
 
-	static void StartDialog(std::string str)
+	static void StartDialog(Dialog&& dialog)
 	{
 		auto& s = Instance();
-		s.m_dialog = str;
-		LOG("{}", s.m_dialog);
-		s.charDisp = 1;
-		s.charCountDown = s.m_charDelay;
-		s.UpdateText(str.substr(0, 1));
+		s.m_activeDialog = std::move(dialog);
+		s.StartDialogPart(0);
 	}
 
 	static bool IsOpen()
 	{
 		auto& s = Instance();
-		return s.m_dialog.size() > 0 || s.closeDown > 0;
+		return s.m_dialog.size() > 0 || s.closeDown > 0 || s.m_activeDialog.GetPartCount() > s.dialogPart;
 	}
 
 private:
+	void StartDialogPart(int index)
+	{
+		dialogPart = index;
+		m_dialog = "";
+		if (index >= m_activeDialog.GetPartCount())
+		{
+			return;
+		}
+		auto& part = m_activeDialog.GetPart(index);
+		if (std::holds_alternative<DialogCallback>(part))
+		{
+			std::get<DialogCallback>(part)();
+			StartDialogPart(index+1);
+			return;
+		}
+		auto str = std::get<std::string>(part);
+		m_dialog = str;
+		LOG("{}", m_dialog);
+		charDisp = 1;
+		charCountDown = m_charDelay;
+		UpdateText(str.substr(0, 1));
+	}
 	void UpdateText(std::string s)
 	{
 		if (m_displayed == s)
@@ -104,6 +149,8 @@ private:
 	tako::Texture m_texture;
 	tako::Texture m_arrow;
 	tako::Font* m_font;
+	Dialog m_activeDialog;
+	int dialogPart = 0;
 	float closeDown = 0;
 	float m_charDelay = 0.075f;
 	tako::OpenGLPixelArtDrawer* m_drawer;

@@ -88,7 +88,7 @@ public:
 	void Update(tako::Input* input, float dt)
 	{
 		DialogSystem::Update(input, dt);
-		if (input->GetKeyDown(tako::Key::Space))
+		if (input->GetKey(tako::Key::Space))
 		{
 			ChangePalette({RandomColor(),RandomColor(),RandomColor(),RandomColor()});
 		}

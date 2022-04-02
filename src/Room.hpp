@@ -87,7 +87,11 @@ public:
 				SpriteRenderer{{8,8}, getTexture("/Dog.png"), {0, 0}},
 				Interactable{[=](const tako::World& world, tako::Entity self, tako::Entity other)
 				{
-					DialogSystem::StartDialog("Oh, who is a good boy?!\nYes you are!");
+					DialogSystem::StartDialog(
+					{
+						"Oh, who is a good boy?!\nYes you are!",
+						"Wuff, GRRR!"
+					});
 					return true;
 				}}
 			);
