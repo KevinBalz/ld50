@@ -1,7 +1,7 @@
 #pragma once
 #include "Math.hpp"
 
-struct TilePosition
+struct Tile
 {
 	int x;
 	int y;
@@ -51,6 +51,18 @@ namespace Grid
 		auto newY = mov.targetY + yDelta;
 
 		bool col = false;
+		world.IterateComps<Tile>([&](Tile& tile)
+		{
+			if (tile.x == newX && tile.y == newY)
+			{
+				col = true;
+			}
+		});
+		if (col)
+		{
+			return true;
+		}
+
 		world.IterateComps<tako::Entity, MovingObject>([&](tako::Entity ent, MovingObject& m)
 		{
 			if (ent == entity)

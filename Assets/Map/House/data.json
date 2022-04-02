@@ -1,0 +1,38 @@
+{
+	"x": 0,
+	"y": 0,
+	"width": 128,
+	"height": 64,
+	"iid": "ecdb3300-8dc0-11ec-b37f-0b1a2655860f",
+	"layers": [
+		"Tiles.png"
+	],
+	"entities": {
+		"PlayerSpawn": [
+			{
+				"id": "PlayerSpawn",
+				"iid": "749dc490-8dc0-11ec-b37f-ebe96b7caab2",
+				"layer": "Entities",
+				"x": 96,
+				"y": 16,
+				"width": 8,
+				"height": 8,
+				"color": 9755059,
+				"customFields" : {}
+			}
+		],
+		"Dog": [
+			{
+				"id": "Dog",
+				"iid": "6d089500-8dc0-11ec-b37f-1784fff94c77",
+				"layer": "Entities",
+				"x": 16,
+				"y": 24,
+				"width": 8,
+				"height": 8,
+				"color": 1331469,
+				"customFields" : {}
+			}
+		]
+	}
+}

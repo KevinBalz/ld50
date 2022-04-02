@@ -9,9 +9,12 @@ include(tako)
 SET(EXECUTABLE game)
 add_executable(${EXECUTABLE} WIN32
         "src/Main.cpp"
+        "dependencies/parson/parson.c"
+        "dependencies/parson/parson.h"
         "src/Game.hpp" src/Renderer.hpp src/Grid.hpp src/Player.hpp src/Room.hpp src/Entities.hpp)
 
 tako_setup(${EXECUTABLE})
 target_link_libraries(${EXECUTABLE} PRIVATE tako)
+target_include_directories(${EXECUTABLE} PUBLIC "dependencies/parson")
 
 tako_assets_dir("${CMAKE_CURRENT_SOURCE_DIR}/Assets/")

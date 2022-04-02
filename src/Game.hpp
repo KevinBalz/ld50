@@ -25,7 +25,7 @@ public:
 		m_tile = LoadPaletteSprite("/Tile.png");
 
 		m_activeRoom = new Room();
-		m_activeRoom->Init([&](std::string path)
+		m_activeRoom->Init("House", [&](std::string path)
 		{
 			auto paletteSprite = LoadPaletteSprite(path);
 			return &paletteSprite->texture;

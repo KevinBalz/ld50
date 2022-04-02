@@ -4,26 +4,87 @@
 #include "Grid.hpp"
 #include "Player.hpp"
 #include "Renderer.hpp"
+#include "parson.h"
 
 class Room
 {
 public:
 
-	void Init(std::function<tako::Texture*(std::string)> getTexture)
+	void Init(std::string levelName, std::function<tako::Texture*(std::string)> getTexture)
 	{
-		m_world.Create
-		(
-			Player(),
-			Camera(),
-			GridObject(0, 0),
-			MovingObject{0, 0, 5},
-			SpriteRenderer{{8,8}, getTexture("/Player.png"), {0, 0}}
-		);
-		m_world.Create
-		(
-			GridObject(-2, 0),
-			SpriteRenderer{{8,8}, getTexture("/Dog.png"), {0, 0}}
-		);
+		std::string levelFolder = "/Map/" + levelName + "/";
+		std::string file = levelFolder + "data.json";
+		constexpr size_t bufferSize = 1024 * 1024;
+		std::array <tako::U8, bufferSize> buffer;
+		size_t bytesRead = 0;
+		if (!tako::FileSystem::ReadFile(file.c_str(), buffer.data(), bufferSize, bytesRead))
+		{
+			LOG_ERR("Could not read level {}", file);
+		}
+		buffer[bytesRead] = '/0';
+
+		auto levelJson = json_value_get_object(json_parse_string((char*)buffer.data()));
+
+		auto layerArray = json_object_get_array(levelJson, "layers");
+		auto layerCount = json_array_get_count(layerArray);
+
+		for (int i = 0; i < layerCount; i++)
+		{
+			auto layer = json_array_get_string(layerArray, i);
+			m_tilesPNG.push_back(getTexture(levelFolder + layer));
+		}
+
+		auto intGrid = tako::Bitmap::FromFile((levelFolder + "IntGrid-int.png").c_str());
+		for (int x = 0; x < intGrid.Width(); x++)
+		{
+			for (int y = 0; y < intGrid.Height(); y++)
+			{
+				auto p = intGrid.GetPixel(x, y);
+				if (p == tako::Color(0, 0, 0, 255))
+				{
+					m_world.Create(
+						Tile{x, -y}
+					);
+				}
+			}
+		}
+
+		auto entitiesJSON = json_object_get_object(levelJson, "entities");
+		auto loadEntityType = [&](const char* name, std::function<void(int, int)> callback)
+		{
+			auto array = json_object_get_array(entitiesJSON, name);
+			auto count = json_array_get_count(array);
+			for (int i = 0; i < count; i++)
+			{
+				auto jsonObj = json_array_get_object(array, i);
+				int x = json_object_get_number(jsonObj, "x") / 8;
+				int y = -json_object_get_number(jsonObj, "y") / 8;
+				callback(x, y);
+			}
+		};
+
+		loadEntityType("PlayerSpawn", [&](int x, int y)
+		{
+			m_world.Create
+			(
+				Player(),
+				Camera(),
+				GridObject(x, y),
+				MovingObject{x, y, 5},
+				SpriteRenderer{{8,8}, getTexture("/Player.png"), {0, 0}}
+			);
+		});
+
+		loadEntityType("Dog", [&](int x, int y)
+		{
+			m_world.Create
+			(
+				GridObject(x, y),
+				SpriteRenderer{{8,8}, getTexture("/Dog.png"), {0, 0}}
+			);
+		});
+
+
 	}
 
 	void Update(tako::Input* input, float dt)
@@ -78,12 +139,10 @@ public:
 	void Draw(tako::OpenGLPixelArtDrawer* drawer, PaletteSprite* m_tile)
 	{
 		drawer->SetCameraPosition(GetCamera());
-		for (int x = -10; x < 10; x++)
+
+		for (auto layer : m_tilesPNG)
 		{
-			for (int y = -10; y < 10; y++)
-			{
-				drawer->DrawImage(x * 8, y * 8, 8, 8, m_tile->texture.handle);
-			}
+			drawer->DrawImage(0, 0, layer->width, layer->height, layer->handle);
 		}
 
 		m_world.IterateComps<GridObject, RectangleRenderer>([&](GridObject& grid, RectangleRenderer& rect)
@@ -100,6 +159,7 @@ public:
 
 private:
 	tako::World m_world;
+	std::vector<tako::Texture*> m_tilesPNG;
 
 	tako::Vector2 GetCamera()
 	{
