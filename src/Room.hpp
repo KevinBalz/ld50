@@ -6,6 +6,7 @@
 #include "Renderer.hpp"
 #include "parson.h"
 #include "Entities.hpp"
+#include "DialogSystem.hpp"
 
 class Room
 {
@@ -86,7 +87,7 @@ public:
 				SpriteRenderer{{8,8}, getTexture("/Dog.png"), {0, 0}},
 				Interactable{[=](const tako::World& world, tako::Entity self, tako::Entity other)
 				{
-					LOG("Wuff");
+					DialogSystem::StartDialog("Oh, who is a good boy?!\nYes you are!");
 					return true;
 				}}
 			);
@@ -99,71 +100,74 @@ public:
 	{
 		m_world.IterateComps<tako::Entity, GridObject, MovingObject, Player>([&](tako::Entity ent, GridObject& grid, MovingObject& move, Player& player)
 		{
-			if (!move.IsMoving(grid))
+			if (!DialogSystem::IsOpen())
 			{
-				if (input->GetKeyDown(tako::Key::L) || input->GetKeyDown(tako::Key::Gamepad_A))
+				if (!move.IsMoving(grid))
 				{
-					auto targetTile = grid.GetTile() + GetFaceDelta(player.facing);
-					bool interacted = false;
-					m_world.IterateComps<tako::Entity, GridObject, Interactable>([&](tako::Entity e, GridObject& g, Interactable& inter)
+					if (input->GetKeyDown(tako::Key::L) || input->GetKeyDown(tako::Key::Gamepad_A))
 					{
-						if (!interacted && g.GetTile() == targetTile)
+						auto targetTile = grid.GetTile() + GetFaceDelta(player.facing);
+						bool interacted = false;
+						m_world.IterateComps<tako::Entity, GridObject, Interactable>([&](tako::Entity e, GridObject& g, Interactable& inter)
 						{
-							interacted = inter.callback(m_world, e, ent);
-						}
-					});
-				}
-				else
-				{
-					//TODO: limit movement to one direction at a time
-					int xDelta = 0;
-					int yDelta = 0;
-					if (input->GetKey(tako::Key::Left) || input->GetKey(tako::Key::A) || input->GetKey(tako::Key::Gamepad_Dpad_Left))
-					{
-						xDelta -= 1;
+							if (!interacted && g.GetTile() == targetTile)
+							{
+								interacted = inter.callback(m_world, e, ent);
+							}
+						});
 					}
-					if (input->GetKey(tako::Key::Right) || input->GetKey(tako::Key::D) || input->GetKey(tako::Key::Gamepad_Dpad_Right))
+					else
 					{
-						xDelta += 1;
-					}
-					if (input->GetKey(tako::Key::Up) || input->GetKey(tako::Key::W) || input->GetKey(tako::Key::Gamepad_Dpad_Up))
-					{
-						yDelta += 1;
-					}
-					if (input->GetKey(tako::Key::Down) || input->GetKey(tako::Key::S) || input->GetKey(tako::Key::Gamepad_Dpad_Down))
-					{
-						yDelta -= 1;
-					}
-					if (xDelta != 0 && yDelta != 0)
-					{
-						if (player.facing == FaceDirection::Down || player.facing == FaceDirection::Up)
+						//TODO: limit movement to one direction at a time
+						int xDelta = 0;
+						int yDelta = 0;
+						if (input->GetKey(tako::Key::Left) || input->GetKey(tako::Key::A) || input->GetKey(tako::Key::Gamepad_Dpad_Left))
 						{
-							yDelta = 0;
+							xDelta -= 1;
 						}
-						else
+						if (input->GetKey(tako::Key::Right) || input->GetKey(tako::Key::D) || input->GetKey(tako::Key::Gamepad_Dpad_Right))
 						{
-							xDelta = 0;
+							xDelta += 1;
 						}
-					}
-					if (xDelta != 0 || yDelta != 0)
-					{
-						if (xDelta == 1)
+						if (input->GetKey(tako::Key::Up) || input->GetKey(tako::Key::W) || input->GetKey(tako::Key::Gamepad_Dpad_Up))
 						{
-							player.facing = FaceDirection::Right;
+							yDelta += 1;
 						}
-						if (xDelta == -1)
+						if (input->GetKey(tako::Key::Down) || input->GetKey(tako::Key::S) || input->GetKey(tako::Key::Gamepad_Dpad_Down))
 						{
-							player.facing = FaceDirection::Left;
+							yDelta -= 1;
 						}
-						if (yDelta == 1)
+						if (xDelta != 0 && yDelta != 0)
 						{
-							player.facing = FaceDirection::Up;
+							if (player.facing == FaceDirection::Down || player.facing == FaceDirection::Up)
+							{
+								yDelta = 0;
+							}
+							else
+							{
+								xDelta = 0;
+							}
 						}
-						if (yDelta == -1)
+						if (xDelta != 0 || yDelta != 0)
 						{
-							player.facing = FaceDirection::Down;
+							if (xDelta == 1)
+							{
+								player.facing = FaceDirection::Right;
+							}
+							if (xDelta == -1)
+							{
+								player.facing = FaceDirection::Left;
+							}
+							if (yDelta == 1)
+							{
+								player.facing = FaceDirection::Up;
+							}
+							if (yDelta == -1)
+							{
+								player.facing = FaceDirection::Down;
+							}
+							Grid::Move(ent, xDelta, yDelta, m_world);
 						}
-						Grid::Move(ent, xDelta, yDelta, m_world);
 					}
 				}
 			}

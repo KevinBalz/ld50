@@ -17,11 +17,12 @@ public:
 		srand(time(NULL));
 		m_context = setup.context;
 		m_drawer = new tako::OpenGLPixelArtDrawer(setup.context);
-		m_drawer->Resize(1024, 768);
+		m_drawer->Resize(1200, 675);
 		m_drawer->SetTargetSize(240/2, 135/2);
 		m_drawer->AutoScale();
 
 		ChangePalette(DefaultPalette);
+		DialogSystem::Init(m_drawer);
 		m_tile = LoadPaletteSprite("/Tile.png");
 
 		m_activeRoom = new Room();
@@ -86,6 +87,7 @@ public:
 
 	void Update(tako::Input* input, float dt)
 	{
+		DialogSystem::Update(input, dt);
 		if (input->GetKeyDown(tako::Key::Space))
 		{
 			ChangePalette({RandomColor(),RandomColor(),RandomColor(),RandomColor()});
@@ -101,6 +103,7 @@ public:
 		m_drawer->SetClearColor(m_activePalette[3]);
 
 		m_activeRoom->Draw(drawer, m_tile);
+		DialogSystem::Draw(m_drawer, m_activePalette);
 
 		m_context->End();
 	}
