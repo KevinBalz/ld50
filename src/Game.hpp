@@ -88,10 +88,6 @@ public:
 	void Update(tako::Input* input, float dt)
 	{
 		DialogSystem::Update(input, dt);
-		if (input->GetKey(tako::Key::Space))
-		{
-			ChangePalette({RandomColor(),RandomColor(),RandomColor(),RandomColor()});
-		}
 		m_activeRoom->Update(input, dt);
 	}
 
@@ -102,7 +98,7 @@ public:
 		drawer->Clear();
 		m_drawer->SetClearColor(m_activePalette[3]);
 
-		m_activeRoom->Draw(drawer, m_tile);
+		m_activeRoom->Draw(drawer, m_activePalette);
 		DialogSystem::Draw(m_drawer, m_activePalette);
 
 		m_context->End();

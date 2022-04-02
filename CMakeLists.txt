@@ -11,7 +11,7 @@ add_executable(${EXECUTABLE} WIN32
         "src/Main.cpp"
         "dependencies/parson/parson.c"
         "dependencies/parson/parson.h"
-        "src/Game.hpp" src/Renderer.hpp src/Grid.hpp src/Player.hpp src/Room.hpp src/Entities.hpp src/Facing.hpp src/DialogSystem.hpp src/DialogSystem.cpp)
+        "src/Game.hpp" src/Renderer.hpp src/Grid.hpp src/Player.hpp src/Room.hpp src/Entities.hpp src/Facing.hpp src/DialogSystem.hpp src/DialogSystem.cpp src/Inventory.hpp)
 
 tako_setup(${EXECUTABLE})
 target_link_libraries(${EXECUTABLE} PRIVATE tako)

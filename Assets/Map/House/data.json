@@ -33,6 +33,47 @@
 				"color": 1331469,
 				"customFields" : {}
 			}
+		],
+		"Pickup": [
+			{
+				"id": "Pickup",
+				"iid": "02993920-8dc0-11ec-9dea-cba5c5e620af",
+				"layer": "Entities",
+				"x": 56,
+				"y": 40,
+				"width": 8,
+				"height": 8,
+				"color": 4918479,
+				"customFields": {
+					"Item": "Bone"
+				}
+			},
+			{
+				"id": "Pickup",
+				"iid": "9086ec80-8dc0-11ec-9dea-d774b51a092b",
+				"layer": "Entities",
+				"x": 40,
+				"y": 16,
+				"width": 8,
+				"height": 8,
+				"color": 4918479,
+				"customFields": {
+					"Item": "Bone"
+				}
+			},
+			{
+				"id": "Pickup",
+				"iid": "315d7580-8dc0-11ec-9dea-d9a705e3df74",
+				"layer": "Entities",
+				"x": 32,
+				"y": 40,
+				"width": 8,
+				"height": 8,
+				"color": 4918479,
+				"customFields": {
+					"Item": "Stick"
+				}
+			}
 		]
 	}
 }

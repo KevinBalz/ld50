@@ -8,12 +8,15 @@
 #include "Entities.hpp"
 #include "DialogSystem.hpp"
 
+using GetTextureCallback = std::function<tako::Texture*(std::string)>;
+
 class Room
 {
 public:
 
-	void Init(std::string levelName, std::function<tako::Texture*(std::string)> getTexture)
+	void Init(std::string levelName, GetTextureCallback getTexture)
 	{
+		m_getTexture = getTexture;
 		std::string levelFolder = "/Map/" + levelName + "/";
 		std::string file = levelFolder + "data.json";
 		constexpr size_t bufferSize = 1024 * 1024;
@@ -52,7 +55,7 @@ public:
 		}
 
 		auto entitiesJSON = json_object_get_object(levelJson, "entities");
-		auto loadEntityType = [&](const char* name, std::function<void(int, int)> callback)
+		auto loadEntityType = [&](const char* name, std::function<void(int, int, JSON_Object*)> callback)
 		{
 			auto array = json_object_get_array(entitiesJSON, name);
 			auto count = json_array_get_count(array);
@@ -61,11 +64,11 @@ public:
 				auto jsonObj = json_array_get_object(array, i);
 				int x = json_object_get_number(jsonObj, "x") / 8;
 				int y = -json_object_get_number(jsonObj, "y") / 8;
-				callback(x, y);
+				callback(x, y, json_object_get_object(jsonObj, "customFields"));
 			}
 		};
 
-		loadEntityType("PlayerSpawn", [&](int x, int y)
+		loadEntityType("PlayerSpawn", [&](int x, int y, JSON_Object* custom)
 		{
 			m_world.Create
 			(
@@ -77,7 +80,7 @@ public:
 			);
 		});
 
-		loadEntityType("Dog", [&](int x, int y)
+		loadEntityType("Dog", [&](int x, int y, JSON_Object* custom)
 		{
 			m_world.Create
 			(
@@ -85,7 +88,7 @@ public:
 				MovingObject{x, y, 2},
 				Dog(),
 				SpriteRenderer{{8,8}, getTexture("/Dog.png"), {0, 0}},
-				Interactable{[=](const tako::World& world, tako::Entity self, tako::Entity other)
+				Interactable{[&](tako::World& world, tako::Entity self, tako::Entity other)
 				{
 					DialogSystem::StartDialog(
 					{
@@ -93,11 +96,74 @@ public:
 						"Wuff, GRRR!"
 					});
 					return true;
+				}},
+				Appliable{[=](tako::World& world, tako::Entity self, tako::Entity other, InventoryItem item)
+				{
+					if (!world.HasComponent<Player>(other))
+					{
+						return false;
+					}
+					switch (item)
+					{
+						case InventoryItem::Bone:
+						{
+							DialogSystem::StartDialog(
+							{
+								"Wuff Grr!\n(A Bone!)",
+								"(You're the best)",
+								[=]()
+								{
+									auto& player = m_world.GetComponent<Player>(other);
+									player.RemoveHeldItem(item);
+								}
+							});
+							break;
+						}
+						case InventoryItem::Stick:
+						{
+							DialogSystem::StartDialog(
+							{
+								"Wuff Grr!\n(A Stick!)",
+								"(Let's play the next time\n we get to the park!)"
+							});
+							break;
+						}
+					}
+					return false;
 				}}
 			);
 		});
 
-
+		loadEntityType("Pickup", [&](int x, int y, JSON_Object* custom)
+		{
+			std::string itemStr = json_object_get_string(custom, "Item");
+			auto item = GetItemFromString(itemStr);
+			m_world.Create
+			(
+				GridObject(x, y),
+				Pickup{item},
+				SpriteRenderer{{8,8}, getTexture(GetItemPic(item)), {0, 0}},
+				Interactable{[=](tako::World& world, tako::Entity self, tako::Entity other)
+				{
+					if (!world.HasComponent<Player>(other))
+					{
+						return false;
+					}
+					DialogSystem::StartDialog(
+					{
+						"Found " + itemStr + "!",
+						[=]()
+						{
+							auto& pickup = m_world.GetComponent<Pickup>(self);
+							auto& player = m_world.GetComponent<Player>(other);
+							player.items.push_back(pickup.item);
+							m_world.Delete(self);
+						}
+					});
+					return true;
+				}}
+			);
+		});
 	}
 
 	void Update(tako::Input* input, float dt)
@@ -108,7 +174,45 @@ public:
 			{
 				if (!move.IsMoving(grid))
 				{
-					if (input->GetKeyDown(tako::Key::L) || input->GetKeyDown(tako::Key::Gamepad_A))
+					auto inventoryKey = input->GetKeyDown(tako::Key::Space) || input->GetKeyDown(tako::Key::Enter) || input->GetKeyDown(tako::Key::Gamepad_Start);
+					auto interactionKey = input->GetKeyDown(tako::Key::L) || input->GetKeyDown(tako::Key::Gamepad_A);
+					auto useKey = input->GetKeyDown(tako::Key::K) || input->GetKeyDown(tako::Key::Gamepad_B);
+					if (player.inventoryOpen && inventoryKey)
+					{
+						player.inventoryOpen = false;
+					}
+					else if (!player.inventoryOpen && inventoryKey)
+					{
+						if (player.items.size() <= 0)
+						{
+							DialogSystem::StartDialog({"No items in inventory"});
+						}
+						else
+						{
+							player.inventoryOpen = true;
+							player.inventorySlotSelection = 0;
+						}
+					}
+					else if (player.inventoryOpen)
+					{
+						if (interactionKey)
+						{
+							player.inventoryOpen = false;
+							std::swap(player.items[0], player.items[player.inventorySlotSelection]);
+						}
+						else
+						{
+							if (input->GetKeyDown(tako::Key::Left) || input->GetKeyDown(tako::Key::A) || input->GetKeyDown(tako::Key::Gamepad_Dpad_Left))
+							{
+								player.inventorySlotSelection = std::max(0, player.inventorySlotSelection - 1);
+							}
+							if (input->GetKeyDown(tako::Key::Right) || input->GetKeyDown(tako::Key::D) || input->GetKeyDown(tako::Key::Gamepad_Dpad_Right))
+							{
+								player.inventorySlotSelection = std::min((int)player.items.size() - 1, player.inventorySlotSelection + 1);
+							}
+						}
+					}
+					else if (interactionKey)
 					{
 						auto targetTile = grid.GetTile() + GetFaceDelta(player.facing);
 						bool interacted = false;
@@ -119,6 +223,25 @@ public:
 								interacted = inter.callback(m_world, e, ent);
 							}
 						});
+					}
+					else if (useKey)
+					{
+						if (player.items.size() <= 0)
+						{
+							DialogSystem::StartDialog({"This isn't the time to\nuse that !", "Nevermind,\nyou have no bike"});
+						}
+						else
+						{
+							auto targetTile = grid.GetTile() + GetFaceDelta(player.facing);
+							bool interacted = false;
+							m_world.IterateComps<tako::Entity, GridObject, Appliable>([&](tako::Entity e, GridObject& g, Appliable& app)
+							{
+								if (!interacted && g.GetTile() == targetTile)
+								{
+									interacted = app.callback(m_world, e, ent, player.items[0]);
+								}
+							});
+						}
 					}
 					else
 					{
@@ -207,7 +330,7 @@ public:
 		});
 	}
 
-	void Draw(tako::OpenGLPixelArtDrawer* drawer, PaletteSprite* m_tile)
+	void Draw(tako::OpenGLPixelArtDrawer* drawer, const Palette& palette)
 	{
 		drawer->SetCameraPosition(GetCamera());
 
@@ -225,12 +348,44 @@ public:
 		{
 			drawer->DrawImage(grid.x * 8, grid.y * 8, sp.size.x, sp.size.y, sp.sprite->handle);
 		});
+
+		m_world.IterateComps<Player>([&](Player& player)
+		{
+			if (player.items.size() <= 0)
+			{
+				return;
+			}
+			drawer->SetCameraPosition({0,0});
+			if (!player.inventoryOpen)
+			{
+				tako::Vector2 topLeft{-drawer->GetCameraViewSize().x/2 + 1, drawer->GetCameraViewSize().y/2 - 1};
+				drawer->DrawRectangle(topLeft.x, topLeft.y, 12, 12, palette[0]);
+				topLeft += { 1, -1 };
+				drawer->DrawRectangle(topLeft.x, topLeft.y, 10, 10, palette[3]);
+				topLeft += { 1, -1 };
+				drawer->DrawImage(topLeft.x, topLeft.y, 8, 8, m_getTexture(GetItemPic(player.items[0]))->handle);
+				return;
+			}
+
+			auto totalWidth = player.items.size() * 14 + 2;
+			tako::Vector2 topLeft{-(float)totalWidth/2, 6};
+			for (int i = 0; i < player.items.size(); i++)
+			{
+				auto item = player.items[i];
+				drawer->DrawRectangle(topLeft.x + 1, topLeft.y, 12, 12, i == player.inventorySlotSelection ? palette[1] : palette[0]);
+				drawer->DrawRectangle(topLeft.x + 2, topLeft.y - 1, 10, 10, palette[3]);
+				drawer->DrawImage(topLeft.x + 3, topLeft.y - 2, 8, 8, m_getTexture(GetItemPic(item))->handle);
+				topLeft.x += 13;
+			}
+		});
+
 	}
 
 
 private:
 	tako::World m_world;
 	std::vector<tako::Texture*> m_tilesPNG;
+	GetTextureCallback m_getTexture;
 
 	tako::Vector2 GetCamera()
 	{

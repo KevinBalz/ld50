@@ -1,5 +1,6 @@
 #pragma once
 #include "World.hpp"
+#include "Inventory.hpp"
 
 struct Dog
 {
@@ -7,5 +8,10 @@ struct Dog
 
 struct Interactable
 {
-	std::function<bool(const tako::World&, tako::Entity, tako::Entity)> callback;
+	std::function<bool(tako::World&, tako::Entity, tako::Entity)> callback;
+};
+
+struct Appliable
+{
+	std::function<bool(tako::World&, tako::Entity, tako::Entity, InventoryItem item)> callback;
 };
