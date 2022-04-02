@@ -1,10 +1,21 @@
 #pragma once
 #include "Math.hpp"
+#include "Facing.hpp"
 
 struct Tile
 {
 	int x;
 	int y;
+
+	friend Tile operator+(const Tile& a, const FaceDelta& b)
+	{
+		return { a.x + b.x, a.y + b.y };
+	}
+
+	friend bool operator==(const Tile& a, const Tile& b)
+	{
+		return a.x == b.x && a.y == b.y;
+	}
 };
 
 struct GridObject
@@ -18,6 +29,10 @@ struct GridObject
 		y = tileY;
 	}
 
+	Tile GetTile()
+	{
+		return { (int) std::round(x), (int) std::round(y) };
+	}
 };
 constexpr float EPSILON = 0.05;
 struct MovingObject

@@ -5,6 +5,7 @@
 #include "Player.hpp"
 #include "Renderer.hpp"
 #include "parson.h"
+#include "Entities.hpp"
 
 class Room
 {
@@ -80,7 +81,14 @@ public:
 			m_world.Create
 			(
 				GridObject(x, y),
-				SpriteRenderer{{8,8}, getTexture("/Dog.png"), {0, 0}}
+				MovingObject{x, y, 2},
+				Dog(),
+				SpriteRenderer{{8,8}, getTexture("/Dog.png"), {0, 0}},
+				Interactable{[=](const tako::World& world, tako::Entity self, tako::Entity other)
+				{
+					LOG("Wuff");
+					return true;
+				}}
 			);
 		});
 
@@ -93,26 +101,81 @@ public:
 		{
 			if (!move.IsMoving(grid))
 			{
-				//TODO: limit movement to one direction at a time
-				int xDelta = 0;
-				int yDelta = 0;
-				if (input->GetKey(tako::Key::Left) || input->GetKey(tako::Key::A) || input->GetKey(tako::Key::Gamepad_Dpad_Left))
+				if (input->GetKeyDown(tako::Key::L) || input->GetKeyDown(tako::Key::Gamepad_A))
 				{
-					xDelta -= 1;
+					auto targetTile = grid.GetTile() + GetFaceDelta(player.facing);
+					bool interacted = false;
+					m_world.IterateComps<tako::Entity, GridObject, Interactable>([&](tako::Entity e, GridObject& g, Interactable& inter)
+					{
+						if (!interacted && g.GetTile() == targetTile)
+						{
+							interacted = inter.callback(m_world, e, ent);
+						}
+					});
 				}
-				if (input->GetKey(tako::Key::Right) || input->GetKey(tako::Key::D) || input->GetKey(tako::Key::Gamepad_Dpad_Right))
+				else
 				{
-					xDelta += 1;
+					//TODO: limit movement to one direction at a time
+					int xDelta = 0;
+					int yDelta = 0;
+					if (input->GetKey(tako::Key::Left) || input->GetKey(tako::Key::A) || input->GetKey(tako::Key::Gamepad_Dpad_Left))
+					{
+						xDelta -= 1;
+					}
+					if (input->GetKey(tako::Key::Right) || input->GetKey(tako::Key::D) || input->GetKey(tako::Key::Gamepad_Dpad_Right))
+					{
+						xDelta += 1;
+					}
+					if (input->GetKey(tako::Key::Up) || input->GetKey(tako::Key::W) || input->GetKey(tako::Key::Gamepad_Dpad_Up))
+					{
+						yDelta += 1;
+					}
+					if (input->GetKey(tako::Key::Down) || input->GetKey(tako::Key::S) || input->GetKey(tako::Key::Gamepad_Dpad_Down))
+					{
+						yDelta -= 1;
+					}
+					if (xDelta != 0 && yDelta != 0)
+					{
+						if (player.facing == FaceDirection::Down || player.facing == FaceDirection::Up)
+						{
+							yDelta = 0;
+						}
+						else
+						{
+							xDelta = 0;
+						}
+					}
+					if (xDelta != 0 || yDelta != 0)
+					{
+						if (xDelta == 1)
+						{
+							player.facing = FaceDirection::Right;
+						}
+						if (xDelta == -1)
+						{
+							player.facing = FaceDirection::Left;
+						}
+						if (yDelta == 1)
+						{
+							player.facing = FaceDirection::Up;
+						}
+						if (yDelta == -1)
+						{
+							player.facing = FaceDirection::Down;
+						}
+						Grid::Move(ent, xDelta, yDelta, m_world);
+					}
 				}
-				if (input->GetKey(tako::Key::Up) || input->GetKey(tako::Key::W) || input->GetKey(tako::Key::Gamepad_Dpad_Up))
-				{
-					yDelta += 1;
-				}
-				if (input->GetKey(tako::Key::Down) || input->GetKey(tako::Key::S) || input->GetKey(tako::Key::Gamepad_Dpad_Down))
-				{
-					yDelta -= 1;
-				}
-				Grid::Move(ent, xDelta, yDelta, m_world);
+			}
+		});
+
+		m_world.IterateComps<tako::Entity, GridObject, MovingObject, Dog>([&](tako::Entity ent, GridObject& grid, MovingObject& move, Dog& dog)
+		{
+			if (!move.IsMoving(grid) && rand() % 250 == 1)
+			{
+				bool mvX = rand() % 2;
+				int sign = rand() % 2 ? 1 : -1;
+				Grid::Move(ent, mvX ? sign : 0, mvX ? 0 : sign, m_world);
 			}
 		});
 		m_world.IterateComps<GridObject, MovingObject>([&](GridObject& grid, MovingObject& move)
