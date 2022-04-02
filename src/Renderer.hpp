@@ -14,8 +14,12 @@ struct RectangleRenderer
 struct SpriteRenderer
 {
 	tako::Vector2 size;
-	tako::Sprite* sprite;
+	tako::Texture* sprite;
 	tako::Vector2 offset;
+};
+
+struct Camera
+{
 };
 
 struct PaletteSprite

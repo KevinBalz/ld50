@@ -7,6 +7,7 @@
 #include "Player.hpp"
 #include <time.h>
 #include <stdlib.h>
+#include "Room.hpp"
 
 class Game
 {
@@ -17,13 +18,18 @@ public:
 		m_context = setup.context;
 		m_drawer = new tako::OpenGLPixelArtDrawer(setup.context);
 		m_drawer->Resize(1024, 768);
-		m_drawer->SetTargetSize(240, 135);
+		m_drawer->SetTargetSize(240/2, 135/2);
 		m_drawer->AutoScale();
 
 		ChangePalette(DefaultPalette);
 		m_tile = LoadPaletteSprite("/Tile.png");
 
-		InitWorld();
+		m_activeRoom = new Room();
+		m_activeRoom->Init([&](std::string path)
+		{
+			auto paletteSprite = LoadPaletteSprite(path);
+			return &paletteSprite->texture;
+		});
 	}
 
 	tako::Bitmap ApplyPaletteBitmap(const tako::Bitmap& bitmap, const Palette& palette)
@@ -52,6 +58,11 @@ public:
 
 	PaletteSprite* LoadPaletteSprite(std::string path)
 	{
+		auto search = m_spriteMap.find(path);
+		if (search != m_spriteMap.end())
+		{
+			return &search->second;
+		}
 		auto bitmap = tako::Bitmap::FromFile(path.c_str());
 		auto paletted = ApplyPaletteBitmap(bitmap, m_activePalette);
 		m_spriteMap[path] = { std::move(bitmap), m_drawer->CreateTexture(paletted)};
@@ -68,17 +79,6 @@ public:
 		}
 	}
 
-	void InitWorld()
-	{
-		m_world.Create
-		(
-			Player(),
-			GridObject(0, 0),
-			MovingObject{0, 0, 5},
-			RectangleRenderer{{8,8}, {255, 0, 0, 255}}
-		);
-	}
-
 	tako::Color RandomColor()
 	{
 		return tako::Color(rand() % 255, rand() % 255, rand() % 255, 255);
@@ -90,48 +90,7 @@ public:
 		{
 			ChangePalette({RandomColor(),RandomColor(),RandomColor(),RandomColor()});
 		}
-		m_world.IterateComps<GridObject, MovingObject, Player>([&](GridObject& grid, MovingObject& move, Player& player)
-		{
-			if (!move.IsMoving(grid))
-			{
-				//TODO: limit movement to one direction at a time
-				if (input->GetKey(tako::Key::Left) || input->GetKey(tako::Key::A) || input->GetKey(tako::Key::Gamepad_Dpad_Left))
-				{
-					move.targetX -= 1;
-				}
-				if (input->GetKey(tako::Key::Right) || input->GetKey(tako::Key::D) || input->GetKey(tako::Key::Gamepad_Dpad_Right))
-				{
-					move.targetX += 1;
-				}
-				if (input->GetKey(tako::Key::Up) || input->GetKey(tako::Key::W) || input->GetKey(tako::Key::Gamepad_Dpad_Up))
-				{
-					move.targetY += 1;
-				}
-				if (input->GetKey(tako::Key::Down) || input->GetKey(tako::Key::S) || input->GetKey(tako::Key::Gamepad_Dpad_Down))
-				{
-					move.targetY -= 1;
-				}
-			}
-		});
-		m_world.IterateComps<GridObject, MovingObject>([&](GridObject& grid, MovingObject& move)
-		{
-			if (move.targetX != grid.x)
-			{
-				grid.x += (move.targetX - grid.x) * move.gridSpeed * dt;
-				if (tako::mathf::abs(grid.x - move.targetX) < EPSILON)
-				{
-					grid.x = move.targetX;
-				}
-			}
-			if (move.targetY != grid.y)
-			{
-				grid.y += (move.targetY - grid.y) * move.gridSpeed * dt;
-				if (tako::mathf::abs(grid.y - move.targetY) < EPSILON)
-				{
-					grid.y = move.targetY;
-				}
-			}
-		});
+		m_activeRoom->Update(input, dt);
 	}
 
 	void Draw()
@@ -141,28 +100,17 @@ public:
 		drawer->Clear();
 		m_drawer->SetClearColor(m_activePalette[3]);
 
-		for (int x = -50; x < 50; x++)
-		{
-			for (int y = -50; y < 50; y++)
-			{
-				drawer->DrawImage(x * 8, y * 8, 8, 8, m_tile->texture.handle);
-			}
-		}
-
-		m_world.IterateComps<GridObject, RectangleRenderer>([&](GridObject& grid, RectangleRenderer& rect)
-		{
-			drawer->DrawRectangle(grid.x * 8, grid.y * 8, rect.size.x, rect.size.y, rect.color);
-		});
+		m_activeRoom->Draw(drawer, m_tile);
 
 		m_context->End();
 	}
 private:
 	tako::GraphicsContext* m_context = nullptr;
 	tako::OpenGLPixelArtDrawer* m_drawer;
-	tako::World m_world;
 	std::unordered_map<std::string, PaletteSprite> m_spriteMap;
 	PaletteSprite* m_tile;
 	Palette m_activePalette;
+	Room* m_activeRoom;
 };
 
 
