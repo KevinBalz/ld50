@@ -228,7 +228,7 @@ public:
 					{
 						if (player.items.size() <= 0)
 						{
-							DialogSystem::StartDialog({"This isn't the time to\nuse that !", "Nevermind,\nyou have no bike"});
+							DialogSystem::StartDialog({"This isn't the time to\nuse that !", "Nevermind, you have no bike,\nor like anything"});
 						}
 						else
 						{

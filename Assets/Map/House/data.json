@@ -73,6 +73,19 @@
 				"customFields": {
 					"Item": "Stick"
 				}
+			},
+			{
+				"id": "Pickup",
+				"iid": "34ab6700-8dc0-11ec-9dea-13f71c48571d",
+				"layer": "Entities",
+				"x": 88,
+				"y": 40,
+				"width": 8,
+				"height": 8,
+				"color": 4918479,
+				"customFields": {
+					"Item": "Medicine"
+				}
 			}
 		]
 	}
