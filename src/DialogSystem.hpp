@@ -6,11 +6,17 @@
 #include <variant>
 
 using DialogCallback = std::function<void()>;
-using DialogPart = std::variant<std::string, DialogCallback>;
+using DialogCallbackWait = std::function<std::function<bool()>()>;
+using DialogPart = std::variant<std::string, DialogCallback, DialogCallbackWait>;
 
 class Dialog
 {
 public:
+	Dialog(std::vector<DialogPart>&& parts)
+	{
+		m_parts = std::move(parts);
+	}
+
 	template<typename... Ps>
 	Dialog(Ps&&... parts)
 	{
@@ -78,16 +84,16 @@ public:
 		}
 
 		drawer->SetTargetSize(240, 135);
-		float winX = 240;
-		float winY = 135/4;
+		float winX = 190;
+		float winY = 135/5;
 		drawer->SetCameraPosition({winX/2, winY});
 		//auto cameraSize = drawer->GetCameraViewSize();
 		drawer->DrawRectangle(1, 1, winX-2, winY-1, palette[0]);
 		drawer->DrawRectangle(2, 0, winX-4, winY-3, palette[3]);
-		drawer->DrawImage(3, -1, s.m_texture.width, s.m_texture.height, s.m_texture.handle, palette[1]);
+		drawer->DrawImage(4, -2, s.m_texture.width, s.m_texture.height, s.m_texture.handle, palette[1]);
 		if (s.charCountDown < 0 && s.m_displayed.size() == s.m_dialog.size())
 		{
-			drawer->DrawImage(winX - 8, -winY/2-5, 3, 5, s.m_arrow.handle, palette[0]);
+			drawer->DrawImage(winX - 8, -winY+10, 3, 5, s.m_arrow.handle, palette[0]);
 		}
 
 		drawer->SetTargetSize(240/2, 135/2);
@@ -103,7 +109,7 @@ public:
 	static bool IsOpen()
 	{
 		auto& s = Instance();
-		return s.m_dialog.size() > 0 || s.closeDown > 0 || s.m_activeDialog.GetPartCount() > s.dialogPart;
+		return s.m_waitCallback || s.m_dialog.size() > 0 || s.closeDown > 0 || s.m_activeDialog.GetPartCount() > s.dialogPart;
 	}
 
 private:
@@ -120,6 +126,11 @@ private:
 		{
 			std::get<DialogCallback>(part)();
 			StartDialogPart(index+1);
+			return;
+		}
+		if (std::holds_alternative<DialogCallbackWait>(part))
+		{
+			m_waitCallback = std::get<DialogCallbackWait>(part)();
 			return;
 		}
 		auto str = std::get<std::string>(part);
@@ -150,6 +161,7 @@ private:
 	tako::Texture m_arrow;
 	tako::Font* m_font;
 	Dialog m_activeDialog;
+	std::optional<std::function<bool()>> m_waitCallback;
 	int dialogPart = 0;
 	float closeDown = 0;
 	float m_charDelay = 0.075f;

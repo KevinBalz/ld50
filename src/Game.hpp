@@ -8,6 +8,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include "Room.hpp"
+#include "Routine.hpp"
 
 class Game
 {
@@ -21,7 +22,9 @@ public:
 		m_drawer->SetTargetSize(240/2, 135/2);
 		m_drawer->AutoScale();
 
-		ChangePalette(DefaultPalette);
+		Routine::Init();
+		Diary::Init();
+		Diary::Reset();
 		DialogSystem::Init(m_drawer);
 		m_tile = LoadPaletteSprite("/Tile.png");
 
@@ -80,13 +83,9 @@ public:
 		}
 	}
 
-	tako::Color RandomColor()
-	{
-		return tako::Color(rand() % 255, rand() % 255, rand() % 255, 255);
-	}
-
 	void Update(tako::Input* input, float dt)
 	{
+		Routine::Update(input, dt);
 		DialogSystem::Update(input, dt);
 		m_activeRoom->Update(input, dt);
 	}
@@ -94,9 +93,13 @@ public:
 	void Draw()
 	{
 		auto drawer = m_drawer;
+		if (m_activePalette != PaletteManager::Get())
+		{
+			ChangePalette(PaletteManager::Get());
+		}
 		m_context->Begin();
-		drawer->Clear();
 		m_drawer->SetClearColor(m_activePalette[3]);
+		drawer->Clear();
 
 		m_activeRoom->Draw(drawer, m_activePalette);
 		DialogSystem::Draw(m_drawer, m_activePalette);

@@ -5,6 +5,45 @@ using Palette = std::array<tako::Color, 4>;
 
 constexpr Palette DefaultPalette = {tako::Color("#081820"), tako::Color("#346856"), tako::Color("#88c070"), tako::Color("#e0f8d0")};
 
+class PaletteManager
+{
+public:
+
+	static void Set(const Palette& pal)
+	{
+		Instance().m_active = pal;
+	}
+
+	static void Reset()
+	{
+		Instance().m_active = DefaultPalette;
+	}
+
+	static void Random()
+	{
+		Set(
+		{
+			tako::Color(rand() % 255, rand() % 255, rand() % 255, 255),
+			tako::Color(rand() % 255, rand() % 255, rand() % 255, 255),
+			tako::Color(rand() % 255, rand() % 255, rand() % 255, 255),
+			tako::Color(rand() % 255, rand() % 255, rand() % 255, 255)
+		});
+	}
+
+	static const Palette& Get()
+	{
+		return Instance().m_active;
+	}
+private:
+	Palette m_active = DefaultPalette;
+	PaletteManager() {}
+	static PaletteManager& Instance()
+	{
+		static PaletteManager i;
+		return i;
+	}
+};
+
 struct RectangleRenderer
 {
 	tako::Vector2 size;

@@ -7,6 +7,7 @@
 #include "parson.h"
 #include "Entities.hpp"
 #include "DialogSystem.hpp"
+#include "Diary.hpp"
 
 using GetTextureCallback = std::function<tako::Texture*(std::string)>;
 
@@ -72,11 +73,59 @@ public:
 		{
 			m_world.Create
 			(
-				Player(),
+				Player({true}),
 				Camera(),
 				GridObject(x, y),
 				MovingObject{x, y, 5},
 				SpriteRenderer{{8,8}, getTexture("/Player.png"), {0, 0}}
+			);
+		});
+
+		loadEntityType("Bed", [&](int x, int y, JSON_Object* custom)
+		{
+			m_world.Create
+			(
+				GridObject(x, y),
+				SpriteRenderer{{8,12}, getTexture("/Bed.png"), {0, 4}},
+				Interactable{[&](tako::World& world, tako::Entity self, tako::Entity other)
+				{
+					if (!world.HasComponent<Player>(other))
+					{
+						return false;
+					}
+					if (!world.GetComponent<Player>(other).human)
+					{
+						return false;
+					}
+					std::vector<DialogPart> dialog;
+					dialog.push_back("I could really get some sleep.");
+					if (Diary::IsDailyTasksDone())
+					{
+						dialog.push_back("I have done everything\nnecessary for today.");
+						dialog.push_back("I could go to sleep or\nspend more precious time");
+						dialog.push_back("with Peanut.\nWhile I still can.");
+						//TODO: ask
+						dialog.push_back([=]()
+						{
+							Diary::StartNextDayRoutine();
+						});
+					}
+					else
+					{
+						auto status = Diary::GetDayStatus();
+						dialog.push_back("But I have still things to do:");
+						if (!status.gaveFood)
+						{
+							dialog.push_back("Peanut needs something\nto munch on");
+						}
+						if (!status.gaveMedicine)
+						{
+							dialog.push_back("Peanut needs his medicine.");
+						}
+					}
+					DialogSystem::StartDialog({std::move(dialog)});
+					return true;
+				}}
 			);
 		});
 
@@ -115,6 +164,7 @@ public:
 								{
 									auto& player = m_world.GetComponent<Player>(other);
 									player.RemoveHeldItem(item);
+									Diary::GaveFood();
 								}
 							});
 							break;
@@ -125,6 +175,21 @@ public:
 							{
 								"Wuff Grr!\n(A Stick!)",
 								"(Let's play the next time\n we get to the park!)"
+							});
+							break;
+						}
+						case InventoryItem::Medicine:
+						{
+							DialogSystem::StartDialog(
+							{
+								"Slllurp",
+								"(Tastes like nothing)",
+								[=]()
+								{
+									auto& player = m_world.GetComponent<Player>(other);
+									player.RemoveHeldItem(item);
+									Diary::GaveMedicine();
+								}
 							});
 							break;
 						}
@@ -346,7 +411,7 @@ public:
 
 		m_world.IterateComps<GridObject, SpriteRenderer>([&](GridObject& grid, SpriteRenderer& sp)
 		{
-			drawer->DrawImage(grid.x * 8, grid.y * 8, sp.size.x, sp.size.y, sp.sprite->handle);
+			drawer->DrawImage(grid.x * 8 + sp.offset.x, grid.y * 8 + sp.offset.y, sp.size.x, sp.size.y, sp.sprite->handle);
 		});
 
 		m_world.IterateComps<Player>([&](Player& player)

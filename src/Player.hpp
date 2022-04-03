@@ -5,8 +5,8 @@
 
 struct Player
 {
+	bool human;
 	FaceDirection facing;
-	bool human = false;
 	std::vector<InventoryItem> items;
 	bool inventoryOpen = false;
 	int inventorySlotSelection;

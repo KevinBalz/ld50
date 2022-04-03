@@ -87,6 +87,19 @@
 					"Item": "Medicine"
 				}
 			}
+		],
+		"Bed": [
+			{
+				"id": "Bed",
+				"iid": "8c489730-8dc0-11ec-9dea-910bd7dd1278",
+				"layer": "Entities",
+				"x": 112,
+				"y": 16,
+				"width": 8,
+				"height": 12,
+				"color": 14422847,
+				"customFields" : {}
+			}
 		]
 	}
 }
