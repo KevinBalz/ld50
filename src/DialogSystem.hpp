@@ -41,7 +41,7 @@ private:
 class DialogSystem
 {
 public:
-	static void Init(tako::OpenGLPixelArtDrawer* drawer)
+	static void Init(tako::OpenGLPixelArtDrawer* drawer, tako::Font* font)
 	{
 		auto& s = Instance();
 		s.m_drawer = drawer;
@@ -49,8 +49,7 @@ public:
 		s.m_texture = s.m_drawer->CreateTexture(bitmap);
 		s.m_nightTexture = s.m_drawer->CreateTexture(bitmap);
 		s.m_arrow = s.m_drawer->CreateTexture(tako::Bitmap::FromFile("/ChatArrow.png"));
-		s.m_font = new tako::Font("/charmap-cellphone.png", 5, 7, 1, 1, 2, 2,
-			" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]\a_`abcdefghijklmnopqrstuvwxyz{|}~");
+		s.m_font = font;
 	}
 
 	static void Update(tako::Input* input, float dt)

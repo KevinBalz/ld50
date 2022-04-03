@@ -11,6 +11,19 @@
 #include "Routine.hpp"
 #include "SceneManager.hpp"
 
+bool GetAnyDown(tako::Input* input)
+{
+	for (int i = 0; i < (int) tako::Key::Unknown; i++)
+	{
+		if (input->GetKeyDown((tako::Key) i))
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 class Game
 {
 public:
@@ -23,10 +36,13 @@ public:
 		m_drawer->SetTargetSize(240/2, 135/2);
 		m_drawer->AutoScale();
 
+		m_font = new tako::Font("/charmap-cellphone.png", 5, 7, 1, 1, 2, 2,
+								" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]\a_`abcdefghijklmnopqrstuvwxyz{|}~");
+
 		Routine::Init();
 		Diary::Init();
 		Diary::Reset();
-		DialogSystem::Init(m_drawer);
+		DialogSystem::Init(m_drawer, m_font);
 
 		SceneManager::Init
 		(
@@ -50,7 +66,10 @@ public:
 			}
 		);
 
-		SceneManager::StartBeginning();
+		{
+			auto bitmap = m_font->RenderText("Press a button to start", 1);
+			m_textPressAny = m_drawer->CreateTexture(bitmap);
+		}
 	}
 
 	tako::Bitmap ApplyPaletteBitmap(const tako::Bitmap& bitmap, const Palette& palette)
@@ -102,6 +121,25 @@ public:
 
 	void Update(tako::Input* input, float dt)
 	{
+		if (m_pressAny)
+		{
+			if (GetAnyDown(input))
+			{
+				m_pressAny = false;
+				//TODO: starting stuff for title
+			}
+			return;
+		}
+		if (m_showTitle)
+		{
+			if (GetAnyDown(input))
+			{
+				m_showTitle = false;
+				SceneManager::StartBeginning();
+				//TODO: starting stuff for title
+			}
+			return;
+		}
 		Routine::Update(input, dt);
 		DialogSystem::Update(input, dt);
 		if (m_activeRoom)
@@ -118,23 +156,46 @@ public:
 			ChangePalette(PaletteManager::Get());
 		}
 		m_context->Begin();
-		m_drawer->SetClearColor(m_activePalette[3]);
-		drawer->Clear();
-
-		if (m_activeRoom)
+		if (m_pressAny)
 		{
-			m_activeRoom->Draw(drawer, m_activePalette);
+			drawer->SetTargetSize(240, 135);
+			m_drawer->SetClearColor(tako::Color("#000000"));
+			drawer->Clear();
+			drawer->SetCameraPosition({0, 0});
+			drawer->DrawImage(-m_textPressAny.width/2, m_textPressAny.height/2, m_textPressAny.width, m_textPressAny.height, m_textPressAny.handle);
 		}
-		DialogSystem::Draw(m_drawer, m_activePalette);
+		else if (m_showTitle)
+		{
+			drawer->SetTargetSize(240, 135);
+			m_drawer->SetClearColor(m_activePalette[3]);
+			drawer->Clear();
+		}
+		else
+		{
+			m_drawer->SetClearColor(m_activePalette[3]);
+			drawer->Clear();
+
+			if (m_activeRoom)
+			{
+				m_activeRoom->Draw(drawer, m_activePalette);
+			}
+			DialogSystem::Draw(m_drawer, m_activePalette);
+		}
+
 
 		m_context->End();
 	}
 private:
+	bool m_pressAny = true;
+	bool m_showTitle = true;
 	tako::GraphicsContext* m_context = nullptr;
 	tako::OpenGLPixelArtDrawer* m_drawer;
 	std::unordered_map<std::string, PaletteSprite> m_spriteMap;
 	Palette m_activePalette;
 	std::optional<Room> m_activeRoom;
+
+	tako::Font* m_font;
+	tako::Texture m_textPressAny;
 };
 
 
