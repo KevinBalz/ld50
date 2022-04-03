@@ -108,8 +108,6 @@ public:
 		{
 			drawer->DrawImage(winX - 8, -winY+10, 3, 5, s.m_arrow.handle, palette[0]);
 		}
-
-		drawer->SetTargetSize(240/2, 135/2);
 	}
 
 	static void StartDialog(Dialog&& dialog)

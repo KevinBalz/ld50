@@ -23,4 +23,5 @@ struct ItemSpawner
 	int x;
 	int y;
 	InventoryItem item;
+	int day = -1;
 };

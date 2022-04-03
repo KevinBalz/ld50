@@ -94,6 +94,11 @@ public:
 		return s.currentDay.gaveFood && s.currentDay.gaveMedicine;
 	}
 
+	static int GetDay()
+	{
+		return Instance().dayNumber;
+	}
+
 	static const DayStatus& GetDayStatus()
 	{
 		return Instance().currentDay;

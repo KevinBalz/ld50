@@ -34,34 +34,6 @@
 				"customFields" : {}
 			}
 		],
-		"Pickup": [
-			{
-				"id": "Pickup",
-				"iid": "02993920-8dc0-11ec-9dea-cba5c5e620af",
-				"layer": "Entities",
-				"x": 80,
-				"y": 64,
-				"width": 8,
-				"height": 8,
-				"color": 4918479,
-				"customFields": {
-					"Item": "Bone"
-				}
-			},
-			{
-				"id": "Pickup",
-				"iid": "315d7580-8dc0-11ec-9dea-d9a705e3df74",
-				"layer": "Entities",
-				"x": 56,
-				"y": 8,
-				"width": 8,
-				"height": 8,
-				"color": 4918479,
-				"customFields": {
-					"Item": "Stick"
-				}
-			}
-		],
 		"Bed": [
 			{
 				"id": "Bed",
@@ -86,7 +58,8 @@
 				"height": 8,
 				"color": 6025692,
 				"customFields": {
-					"Item": "Medicine"
+					"Item": "Medicine",
+					"Day": -1
 				}
 			},
 			{
@@ -99,7 +72,36 @@
 				"height": 8,
 				"color": 6025692,
 				"customFields": {
-					"Item": "DogFood"
+					"Item": "DogFood",
+					"Day": -1
+				}
+			},
+			{
+				"id": "ItemSpawner",
+				"iid": "b7d99ac0-8dc0-11ec-9dea-85879f0c9106",
+				"layer": "Entities",
+				"x": 64,
+				"y": 48,
+				"width": 8,
+				"height": 8,
+				"color": 6025692,
+				"customFields": {
+					"Item": "Bone",
+					"Day": 2
+				}
+			},
+			{
+				"id": "ItemSpawner",
+				"iid": "c3e1be60-8dc0-11ec-9dea-0dc1f43442a2",
+				"layer": "Entities",
+				"x": 96,
+				"y": 8,
+				"width": 8,
+				"height": 8,
+				"color": 6025692,
+				"customFields": {
+					"Item": "Stick",
+					"Day": 3
 				}
 			}
 		]

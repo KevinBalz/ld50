@@ -8,6 +8,7 @@
 #include "Entities.hpp"
 #include "DialogSystem.hpp"
 #include "Diary.hpp"
+#include "SceneManager.hpp"
 
 using GetTextureCallback = std::function<tako::Texture*(std::string)>;
 
@@ -17,9 +18,10 @@ public:
 
 	void Init(std::string levelName, GetTextureCallback getTexture)
 	{
+		m_levelName = std::move(levelName);
 		PaletteManager::Reset();
 		m_getTexture = getTexture;
-		std::string levelFolder = "/Map/" + levelName + "/";
+		std::string levelFolder = "/Map/" + m_levelName + "/";
 		std::string file = levelFolder + "data.json";
 		constexpr size_t bufferSize = 1024 * 1024;
 		std::array <tako::U8, bufferSize> buffer;
@@ -30,7 +32,8 @@ public:
 		}
 		buffer[bytesRead] = '/0';
 
-		auto levelJson = json_value_get_object(json_parse_string((char*)buffer.data()));
+		auto jsonRoot = json_parse_string((char*)buffer.data());
+		auto levelJson = json_value_get_object(jsonRoot);
 
 		auto layerArray = json_object_get_array(levelJson, "layers");
 		auto layerCount = json_array_get_count(layerArray);
@@ -230,12 +233,31 @@ public:
 		{
 			auto itemStr = json_object_get_string(custom, "Item");
 			auto item = GetItemFromString(itemStr);
+			int day = json_object_get_number(custom, "Day");
 			m_world.Create
 			(
-				ItemSpawner{x, y, item}
+				ItemSpawner{x, y, item, day}
 			);
-			SpawnItem(x, y, item);
 		});
+
+		loadEntityType("ParkWarp", [&](int x, int y, JSON_Object* custom)
+		{
+			m_world.Create
+			(
+				GridObject(x, y),
+				Interactable{new InteractionCallback([=](tako::World& world, tako::Entity self, tako::Entity other)
+				{
+					DialogSystem::NightTimeReading
+					(
+						{"Let's go to the Park"},
+						[]() {SceneManager::LoadRoom("Park");}
+					);
+					return true;
+				})}
+			);
+		});
+
+		json_value_free(jsonRoot);
 	}
 
 	void ReplenishSpawns()
@@ -243,9 +265,12 @@ public:
 		std::vector<ItemSpawner> spawner;
 		m_world.IterateComps<ItemSpawner>([&](ItemSpawner& spawn)
 		{
-			spawner.push_back(spawn);
+			if (spawn.day < 0 || spawn.day == Diary::GetDay())
+			{
+				spawner.push_back(spawn);
+			}
 		});
-		for  (auto s : spawner)
+		for (auto s : spawner)
 		{
 			SafeSpawn(s.x, s.y, s.item);
 		}
@@ -305,13 +330,21 @@ public:
 	{
 		if (newDay)
 		{
-			ReplenishSpawns();
-			std::vector<DialogPart> dialog;
-			for (auto s : Diary::GetDailyAgenda())
+			if (Diary::GetDay() != 7 || m_levelName == "House")
 			{
-				dialog.push_back(s);
+				ReplenishSpawns();
+				std::vector<DialogPart> dialog;
+				for (auto s : Diary::GetDailyAgenda())
+				{
+					dialog.emplace_back(s);
+				}
+				DialogSystem::StartDialog(std::move(dialog));
 			}
-			DialogSystem::StartDialog(std::move(dialog));
+			else
+			{
+				LOG("Park");
+			}
+
 			newDay = false;
 		}
 		m_world.IterateComps<tako::Entity, GridObject, MovingObject, Player>([&](tako::Entity ent, GridObject& grid, MovingObject& move, Player& player)
@@ -490,6 +523,7 @@ public:
 
 	void Draw(tako::OpenGLPixelArtDrawer* drawer, const Palette& palette)
 	{
+		drawer->SetTargetSize(240/2, 135/2);
 		drawer->SetCameraPosition(GetCamera() - tako::Vector2(-4,4));
 
 		for (auto layer : m_tilesPNG)
@@ -542,6 +576,7 @@ public:
 
 private:
 	bool newDay = true;
+	std::string m_levelName;
 	tako::World m_world;
 	std::vector<tako::Texture*> m_tilesPNG;
 	GetTextureCallback m_getTexture;

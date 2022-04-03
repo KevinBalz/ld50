@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include "Room.hpp"
 #include "Routine.hpp"
+#include "SceneManager.hpp"
 
 class Game
 {
@@ -27,16 +28,29 @@ public:
 		Diary::Reset();
 		DialogSystem::Init(m_drawer);
 
-		DialogSystem::NightTimeReading(Diary::GetNightTimeReading(), [=]() mutable
-		{
-			Diary::StartNextDay();
-			m_activeRoom = Room();
-			m_activeRoom->Init("House", [&](std::string path)
+		SceneManager::Init
+		(
+			[=]()
 			{
-				auto paletteSprite = LoadPaletteSprite(path);
-				return &paletteSprite->texture;
-			});
-		});
+				Diary::Reset();
+				DialogSystem::NightTimeReading(Diary::GetNightTimeReading(), [=]()
+				{
+					Diary::StartNextDay();
+					SceneManager::LoadRoom("House");
+				});
+			},
+			[=](auto name)
+			{
+				m_activeRoom = Room();
+				m_activeRoom->Init(name, [=](std::string path)
+				{
+					auto paletteSprite = LoadPaletteSprite(path);
+					return &paletteSprite->texture;
+				});
+			}
+		);
+
+		SceneManager::StartBeginning();
 	}
 
 	tako::Bitmap ApplyPaletteBitmap(const tako::Bitmap& bitmap, const Palette& palette)
