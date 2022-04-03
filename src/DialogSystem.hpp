@@ -6,7 +6,8 @@
 #include <variant>
 
 using DialogCallback = std::function<void()>;
-using DialogCallbackWait = std::function<std::function<bool()>()>;
+using BoolReturn = std::function<bool()>;
+using DialogCallbackWait = std::function<BoolReturn()>;
 using DialogPart = std::variant<std::string, DialogCallback, DialogCallbackWait>;
 
 class Dialog

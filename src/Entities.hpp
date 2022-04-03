@@ -6,12 +6,21 @@ struct Dog
 {
 };
 
+using InteractionCallback = std::function<bool(tako::World&, tako::Entity, tako::Entity)>;
+
 struct Interactable
 {
-	std::function<bool(tako::World&, tako::Entity, tako::Entity)> callback;
+	InteractionCallback* callback;
 };
 
 struct Appliable
 {
 	std::function<bool(tako::World&, tako::Entity, tako::Entity, InventoryItem item)> callback;
+};
+
+struct ItemSpawner
+{
+	int x;
+	int y;
+	InventoryItem item;
 };

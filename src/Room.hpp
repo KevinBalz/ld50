@@ -81,13 +81,13 @@ public:
 			);
 		});
 
-		loadEntityType("Bed", [&](int x, int y, JSON_Object* custom)
+		loadEntityType("Bed", [&](int x, int y, JSON_Object* custom) mutable
 		{
 			m_world.Create
 			(
 				GridObject(x, y),
 				SpriteRenderer{{8,12}, getTexture("/Bed.png"), {0, 4}},
-				Interactable{[&](tako::World& world, tako::Entity self, tako::Entity other)
+				Interactable{new InteractionCallback([=](tako::World& world, tako::Entity self, tako::Entity other) mutable
 				{
 					if (!world.HasComponent<Player>(other))
 					{
@@ -101,13 +101,17 @@ public:
 					dialog.push_back("I could really get some sleep.");
 					if (Diary::IsDailyTasksDone())
 					{
+
 						dialog.push_back("I have done everything\nnecessary for today.");
 						dialog.push_back("I could go to sleep or\nspend more precious time");
 						dialog.push_back("with Peanut.\nWhile I still can.");
 						//TODO: ask
-						dialog.push_back([=]()
+						dialog.push_back([=]() mutable
 						{
-							Diary::StartNextDayRoutine();
+							Diary::StartNextDayRoutine([=]() mutable
+							{
+								newDay = true;
+							});
 						});
 					}
 					else
@@ -125,7 +129,7 @@ public:
 					}
 					DialogSystem::StartDialog({std::move(dialog)});
 					return true;
-				}}
+				})}
 			);
 		});
 
@@ -137,7 +141,7 @@ public:
 				MovingObject{x, y, 2},
 				Dog(),
 				SpriteRenderer{{8,8}, getTexture("/Dog.png"), {0, 0}},
-				Interactable{[&](tako::World& world, tako::Entity self, tako::Entity other)
+				Interactable{new InteractionCallback([&](tako::World& world, tako::Entity self, tako::Entity other)
 				{
 					DialogSystem::StartDialog(
 					{
@@ -145,7 +149,7 @@ public:
 						"Wuff, GRRR!"
 					});
 					return true;
-				}},
+				})},
 				Appliable{[=](tako::World& world, tako::Entity self, tako::Entity other, InventoryItem item)
 				{
 					if (!world.HasComponent<Player>(other))
@@ -155,6 +159,21 @@ public:
 					switch (item)
 					{
 						case InventoryItem::Bone:
+						{
+							DialogSystem::StartDialog(
+							{
+								"Wuff Grr!\n(A Bone!)",
+								"(You're the best)",
+								[=]()
+								{
+									auto& player = m_world.GetComponent<Player>(other);
+									player.RemoveHeldItem(item);
+									Diary::GaveFood();
+								}
+							});
+							break;
+						}
+						case InventoryItem::DogFood:
 						{
 							DialogSystem::StartDialog(
 							{
@@ -201,38 +220,93 @@ public:
 
 		loadEntityType("Pickup", [&](int x, int y, JSON_Object* custom)
 		{
-			std::string itemStr = json_object_get_string(custom, "Item");
+			auto itemStr = json_object_get_string(custom, "Item");
+			auto item = GetItemFromString(itemStr);
+			SpawnItem(x, y, item);
+		});
+
+		loadEntityType("ItemSpawner", [&](int x, int y, JSON_Object* custom)
+		{
+			auto itemStr = json_object_get_string(custom, "Item");
 			auto item = GetItemFromString(itemStr);
 			m_world.Create
 			(
-				GridObject(x, y),
-				Pickup{item},
-				SpriteRenderer{{8,8}, getTexture(GetItemPic(item)), {0, 0}},
-				Interactable{[=](tako::World& world, tako::Entity self, tako::Entity other)
-				{
-					if (!world.HasComponent<Player>(other))
-					{
-						return false;
-					}
-					DialogSystem::StartDialog(
-					{
-						"Found " + itemStr + "!",
-						[=]()
-						{
-							auto& pickup = m_world.GetComponent<Pickup>(self);
-							auto& player = m_world.GetComponent<Player>(other);
-							player.items.push_back(pickup.item);
-							m_world.Delete(self);
-						}
-					});
-					return true;
-				}}
+				ItemSpawner{x, y, item}
 			);
+			SpawnItem(x, y, item);
 		});
+	}
+
+	void ReplenishSpawns()
+	{
+		std::vector<ItemSpawner> spawner;
+		m_world.IterateComps<ItemSpawner>([&](ItemSpawner& spawn)
+		{
+			spawner.push_back(spawn);
+		});
+		for  (auto s : spawner)
+		{
+			SafeSpawn(s.x, s.y, s.item);
+		}
+	}
+
+	bool SafeSpawn(int x, int y, InventoryItem item)
+	{
+		std::optional<tako::Entity> col;
+		m_world.IterateComps<tako::Entity, GridObject, Pickup>([&](tako::Entity ent, GridObject& grid, Pickup& pick)
+		{
+			if (grid.x == x && grid.y == y)
+			{
+				col = ent;
+			}
+		});
+		if (!col)
+		{
+			SpawnItem(x, y, item);
+			return true;
+		}
+		return false;
+	}
+
+	void SpawnItem(int x, int y, InventoryItem item)
+	{
+		m_world.Create
+		(
+			GridObject(x, y),
+			Pickup{item},
+			SpriteRenderer{{8,8}, m_getTexture(GetItemPic(item)), {0, 0}},
+			Interactable{new InteractionCallback([=](tako::World& world, tako::Entity self, tako::Entity other) mutable
+			{
+				if (!m_world.HasComponent<Player>(other))
+				{
+					return false;
+				}
+				DialogSystem::StartDialog(
+				{
+					"Found " + GetItemName(item) + "!",
+					[=]() mutable
+					{
+						auto& pickup = m_world.GetComponent<Pickup>(self);
+						auto& inter = m_world.GetComponent<Interactable>(self);
+						auto& player = m_world.GetComponent<Player>(other);
+						player.items.push_back(pickup.item);
+						auto ptr = inter.callback;
+						m_world.Delete(self);
+						delete ptr;
+					}
+				});
+				return true;
+			})}
+		);
 	}
 
 	void Update(tako::Input* input, float dt)
 	{
+		if (newDay)
+		{
+			ReplenishSpawns();
+			newDay = false;
+		}
 		m_world.IterateComps<tako::Entity, GridObject, MovingObject, Player>([&](tako::Entity ent, GridObject& grid, MovingObject& move, Player& player)
 		{
 			if (!DialogSystem::IsOpen())
@@ -283,9 +357,9 @@ public:
 						bool interacted = false;
 						m_world.IterateComps<tako::Entity, GridObject, Interactable>([&](tako::Entity e, GridObject& g, Interactable& inter)
 						{
-							if (!interacted && g.GetTile() == targetTile)
+							if (!interacted && inter.callback && g.GetTile() == targetTile)
 							{
-								interacted = inter.callback(m_world, e, ent);
+								interacted = inter.callback->operator()(m_world, e, ent);
 							}
 						});
 					}
@@ -448,6 +522,7 @@ public:
 
 
 private:
+	bool newDay = false;
 	tako::World m_world;
 	std::vector<tako::Texture*> m_tilesPNG;
 	GetTextureCallback m_getTexture;

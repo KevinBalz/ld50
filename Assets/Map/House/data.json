@@ -73,19 +73,6 @@
 				"customFields": {
 					"Item": "Stick"
 				}
-			},
-			{
-				"id": "Pickup",
-				"iid": "34ab6700-8dc0-11ec-9dea-13f71c48571d",
-				"layer": "Entities",
-				"x": 88,
-				"y": 40,
-				"width": 8,
-				"height": 8,
-				"color": 4918479,
-				"customFields": {
-					"Item": "Medicine"
-				}
 			}
 		],
 		"Bed": [
@@ -99,6 +86,34 @@
 				"height": 12,
 				"color": 14422847,
 				"customFields" : {}
+			}
+		],
+		"ItemSpawner": [
+			{
+				"id": "ItemSpawner",
+				"iid": "47dc2500-8dc0-11ec-9dea-97307e72a9ac",
+				"layer": "Entities",
+				"x": 72,
+				"y": 24,
+				"width": 8,
+				"height": 8,
+				"color": 6025692,
+				"customFields": {
+					"Item": "Medicine"
+				}
+			},
+			{
+				"id": "ItemSpawner",
+				"iid": "98f30490-8dc0-11ec-9dea-ab57bb8bd99e",
+				"layer": "Entities",
+				"x": 72,
+				"y": 40,
+				"width": 8,
+				"height": 8,
+				"color": 6025692,
+				"customFields": {
+					"Item": "DogFood"
+				}
 			}
 		]
 	}

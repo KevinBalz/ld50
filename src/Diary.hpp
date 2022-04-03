@@ -22,7 +22,7 @@ public:
 		s.currentDay = { false, false };
 	}
 
-	static void StartNextDayRoutine()
+	static void StartNextDayRoutine(std::optional<std::function<void()>> finishCallback)
 	{
 		static int i;
 		static float count;
@@ -55,6 +55,10 @@ public:
 				{
 					PaletteManager::Reset();
 					s.StartNextDay();
+					if (finishCallback)
+					{
+						finishCallback.value()();
+					}
 					return false;
 				}
 			}

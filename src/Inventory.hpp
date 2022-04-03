@@ -5,6 +5,7 @@ enum class InventoryItem
 	Bone,
 	Stick,
 	Medicine,
+	DogFood,
 	COUNT
 };
 
@@ -27,17 +28,36 @@ InventoryItem GetItemFromString(std::string_view str)
 	{
 		return InventoryItem::Medicine;
 	}
+	else if (str == "DogFood")
+	{
+		return InventoryItem::DogFood;
+	}
 
 	return InventoryItem::COUNT;
 }
 
-std::string GetItemPic(InventoryItem item)
+std::string GetItemToString(InventoryItem item)
 {
 	switch (item)
 	{
-		case InventoryItem::Bone: return "/Bone.png";
-		case InventoryItem::Stick: return "/Stick.png";
-		case InventoryItem::Medicine: return "/Medicine.png";
+		case InventoryItem::Bone: return "Bone";
+		case InventoryItem::Stick: return "Stick";
+		case InventoryItem::Medicine: return "Medicine";
+		case InventoryItem::DogFood: return "DogFood";
 		default: return "";
 	}
+}
+
+std::string GetItemName(InventoryItem item)
+{
+	switch (item)
+	{
+		case InventoryItem::DogFood: return "Dog Food";
+		default: return GetItemToString(item);
+	}
+}
+
+std::string GetItemPic(InventoryItem item)
+{
+	return "/" + GetItemToString(item) + ".png";
 }
