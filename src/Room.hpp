@@ -367,7 +367,19 @@ public:
 					{
 						if (player.items.size() <= 0)
 						{
-							DialogSystem::StartDialog({"This isn't the time to\nuse that !", "Nevermind, you have no bike,\nor like anything"});
+							auto targetTile = grid.GetTile() + GetFaceDelta(player.facing);
+							bool interacted = false;
+							m_world.IterateComps<tako::Entity, GridObject, Interactable, Pickup>([&](tako::Entity e, GridObject& g, Interactable& inter, Pickup& up)
+							{
+								if (!interacted && inter.callback && g.GetTile() == targetTile)
+								{
+									interacted = inter.callback->operator()(m_world, e, ent);
+								}
+							});
+							if (!interacted)
+							{
+								DialogSystem::StartDialog({"This isn't the time to\nuse that !", "Nevermind, you have no bike,\nor like anything"});
+							}
 						}
 						else
 						{
