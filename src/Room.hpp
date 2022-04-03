@@ -76,7 +76,7 @@ public:
 				Player({true}),
 				Camera(),
 				GridObject(x, y),
-				MovingObject{x, y, 5},
+				MovingObject{x, y, 7},
 				SpriteRenderer{{8,8}, getTexture("/Player.png"), {0, 0}}
 			);
 		});
@@ -453,7 +453,7 @@ public:
 
 		m_world.IterateComps<tako::Entity, GridObject, MovingObject, Dog>([&](tako::Entity ent, GridObject& grid, MovingObject& move, Dog& dog)
 		{
-			if (!move.IsMoving(grid) && rand() % 250 == 1)
+			if (!DialogSystem::IsOpen() && !move.IsMoving(grid) && rand() % 250 == 1)
 			{
 				bool mvX = rand() % 2;
 				int sign = rand() % 2 ? 1 : -1;
@@ -483,7 +483,7 @@ public:
 
 	void Draw(tako::OpenGLPixelArtDrawer* drawer, const Palette& palette)
 	{
-		drawer->SetCameraPosition(GetCamera());
+		drawer->SetCameraPosition(GetCamera() - tako::Vector2(-4,4));
 
 		for (auto layer : m_tilesPNG)
 		{
