@@ -17,6 +17,7 @@ public:
 
 	void Init(std::string levelName, GetTextureCallback getTexture)
 	{
+		PaletteManager::Reset();
 		m_getTexture = getTexture;
 		std::string levelFolder = "/Map/" + levelName + "/";
 		std::string file = levelFolder + "data.json";
@@ -305,6 +306,12 @@ public:
 		if (newDay)
 		{
 			ReplenishSpawns();
+			std::vector<DialogPart> dialog;
+			for (auto s : Diary::GetDailyAgenda())
+			{
+				dialog.push_back(s);
+			}
+			DialogSystem::StartDialog(std::move(dialog));
 			newDay = false;
 		}
 		m_world.IterateComps<tako::Entity, GridObject, MovingObject, Player>([&](tako::Entity ent, GridObject& grid, MovingObject& move, Player& player)
@@ -534,7 +541,7 @@ public:
 
 
 private:
-	bool newDay = false;
+	bool newDay = true;
 	tako::World m_world;
 	std::vector<tako::Texture*> m_tilesPNG;
 	GetTextureCallback m_getTexture;

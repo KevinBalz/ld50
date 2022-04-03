@@ -4,6 +4,7 @@
 #include "Font.hpp"
 #include "Renderer.hpp"
 #include <variant>
+#include "Routine.hpp"
 
 using DialogCallback = std::function<void()>;
 using BoolReturn = std::function<bool()>;
@@ -46,6 +47,7 @@ public:
 		s.m_drawer = drawer;
 		auto bitmap = tako::Bitmap(1,1);
 		s.m_texture = s.m_drawer->CreateTexture(bitmap);
+		s.m_nightTexture = s.m_drawer->CreateTexture(bitmap);
 		s.m_arrow = s.m_drawer->CreateTexture(tako::Bitmap::FromFile("/ChatArrow.png"));
 		s.m_font = new tako::Font("/charmap-cellphone.png", 5, 7, 1, 1, 2, 2,
 			" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]\a_`abcdefghijklmnopqrstuvwxyz{|}~");
@@ -79,6 +81,16 @@ public:
 	static void Draw(tako::OpenGLPixelArtDrawer* drawer, const Palette& palette)
 	{
 		auto& s = Instance();
+
+		if (s.m_showNightText)
+		{
+			drawer->SetTargetSize(240, 135);
+			drawer->SetCameraPosition({0, 0});
+			auto texX = s.m_nightTexture.width;
+			auto texY = s.m_nightTexture.height;
+			drawer->DrawImage(0-texX/2, 0+texY/2, texX, texY, s.m_nightTexture.handle);
+		}
+
 		if (!IsOpen())
 		{
 			return;
@@ -113,6 +125,60 @@ public:
 		return s.m_waitCallback || s.m_dialog.size() > 0 || s.closeDown > 0 || s.m_activeDialog.GetPartCount() > s.dialogPart;
 	}
 
+	static void NightTimeReading(std::vector<const char*> text, std::optional<std::function<void()>> finishCallback)
+	{
+		static float ct;
+		static int textIndex;
+		static int charIndex;
+		ct = 0.3f;
+		textIndex = 0;
+		charIndex = 0;
+		Instance().RenderNightText(text[textIndex], charIndex);
+		Routine::Register([=](auto input, float dt)
+		{
+			ct -= dt;
+			PaletteManager::Black();
+			auto& s = Instance();
+			if (ct <= 0)
+			{
+				if (textIndex < text.size())
+				{
+					auto len = strlen(text[textIndex]);
+					if (charIndex < len)
+					{
+						charIndex++;
+						s.RenderNightText(text[textIndex], charIndex);
+						ct = charIndex == len ? 1.0f : 0.3f;
+					}
+					else
+					{
+						textIndex++;
+						charIndex = 0;
+						if (textIndex < text.size())
+						{
+							s.RenderNightText(text[textIndex], charIndex);
+						}
+						else
+						{
+							s.ClearNightText();
+						}
+						ct = 1.0f;
+					}
+				}
+				else
+				{
+					if (finishCallback)
+					{
+						finishCallback.value()();
+					}
+					return false;
+				}
+			}
+
+			return true;
+		});
+	}
+
 private:
 	void StartDialogPart(int index)
 	{
@@ -141,6 +207,7 @@ private:
 		charCountDown = m_charDelay;
 		UpdateText(str.substr(0, 1));
 	}
+
 	void UpdateText(std::string s)
 	{
 		if (m_displayed == s)
@@ -152,6 +219,26 @@ private:
 		m_drawer->UpdateTexture(m_texture, bitmap);
 	}
 
+	void RenderNightText(const char* fullText, int chars)
+	{
+		LOG("{}", std::string_view(fullText, chars));
+		if (chars <= 0)
+		{
+			m_showNightText = false;
+			return;
+		}
+
+		auto bitmap = m_font->RenderText(std::string_view(fullText, chars), 1);
+		m_drawer->UpdateTexture(m_nightTexture, bitmap);
+		m_showNightText = true;
+	}
+
+	void ClearNightText()
+	{
+		LOG("");
+		m_showNightText = false;
+	}
+
 	DialogSystem() {}
 	static DialogSystem& Instance();
 	std::string m_dialog;
@@ -161,6 +248,8 @@ private:
 	tako::Texture m_texture;
 	tako::Texture m_arrow;
 	tako::Font* m_font;
+	tako::Texture m_nightTexture;
+	bool m_showNightText = false;
 	Dialog m_activeDialog;
 	std::optional<std::function<bool()>> m_waitCallback;
 	int dialogPart = 0;

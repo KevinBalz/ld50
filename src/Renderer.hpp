@@ -21,12 +21,23 @@ public:
 
 	static void Random()
 	{
-		Set(
-		{
+		Set
+		({
 			tako::Color(rand() % 255, rand() % 255, rand() % 255, 255),
 			tako::Color(rand() % 255, rand() % 255, rand() % 255, 255),
 			tako::Color(rand() % 255, rand() % 255, rand() % 255, 255),
 			tako::Color(rand() % 255, rand() % 255, rand() % 255, 255)
+		});
+	}
+
+	static void Black()
+	{
+		Set
+		({
+			tako::Color("#000000"),
+			tako::Color("#000000"),
+			tako::Color("#000000"),
+			tako::Color("#000000")
 		});
 	}
 

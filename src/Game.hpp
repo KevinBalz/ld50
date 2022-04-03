@@ -26,13 +26,16 @@ public:
 		Diary::Init();
 		Diary::Reset();
 		DialogSystem::Init(m_drawer);
-		m_tile = LoadPaletteSprite("/Tile.png");
 
-		m_activeRoom = new Room();
-		m_activeRoom->Init("House", [&](std::string path)
+		DialogSystem::NightTimeReading(Diary::GetNightTimeReading(), [=]() mutable
 		{
-			auto paletteSprite = LoadPaletteSprite(path);
-			return &paletteSprite->texture;
+			Diary::StartNextDay();
+			m_activeRoom = Room();
+			m_activeRoom->Init("House", [&](std::string path)
+			{
+				auto paletteSprite = LoadPaletteSprite(path);
+				return &paletteSprite->texture;
+			});
 		});
 	}
 
@@ -87,7 +90,10 @@ public:
 	{
 		Routine::Update(input, dt);
 		DialogSystem::Update(input, dt);
-		m_activeRoom->Update(input, dt);
+		if (m_activeRoom)
+		{
+			m_activeRoom->Update(input, dt);
+		}
 	}
 
 	void Draw()
@@ -101,7 +107,10 @@ public:
 		m_drawer->SetClearColor(m_activePalette[3]);
 		drawer->Clear();
 
-		m_activeRoom->Draw(drawer, m_activePalette);
+		if (m_activeRoom)
+		{
+			m_activeRoom->Draw(drawer, m_activePalette);
+		}
 		DialogSystem::Draw(m_drawer, m_activePalette);
 
 		m_context->End();
@@ -110,9 +119,8 @@ private:
 	tako::GraphicsContext* m_context = nullptr;
 	tako::OpenGLPixelArtDrawer* m_drawer;
 	std::unordered_map<std::string, PaletteSprite> m_spriteMap;
-	PaletteSprite* m_tile;
 	Palette m_activePalette;
-	Room* m_activeRoom;
+	std::optional<Room> m_activeRoom;
 };
 
 
