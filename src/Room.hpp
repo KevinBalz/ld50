@@ -80,7 +80,7 @@ public:
 				Player({true}),
 				Camera(),
 				GridObject(x, y),
-				MovingObject{x, y, 7},
+				MovingObject{x, y, 4},
 				SpriteRenderer{{8,8}, getTexture("/Player.png"), {0, 0}}
 			);
 		});
@@ -220,7 +220,14 @@ public:
 							DialogSystem::StartDialog(
 							{
 								"Wuff Grr!\n(A Stick!)",
-								"(Let's play the next time\n we get to the park!)"
+								"(Let's play the next time\n we get to the park!)",
+								[=]()
+								{
+									if (Diary::GetDay() == 3)
+									{
+										Diary::DidActivity();
+									}
+								}
 							});
 							break;
 						}
@@ -617,6 +624,10 @@ public:
 								AudioClips::Play("/Pickup.wav");
 								p.items.push_back(dog.heldItem.value());
 								dog.heldItem = {};
+								if (Diary::GetDay() == 5)
+								{
+									Diary::DidActivity();
+								}
 								interacted = true;
 								return;
 							}
@@ -670,17 +681,21 @@ public:
 		});
 		m_world.IterateComps<GridObject, MovingObject>([&](GridObject& grid, MovingObject& move)
 		{
-			if (move.targetX != grid.x)
+			if (grid.x != move.targetX)
 			{
-				grid.x += (move.targetX - grid.x) * move.gridSpeed * dt;
+				auto diff = move.targetX - grid.x;
+				auto delta = move.gridSpeed * dt;
+				grid.x += tako::mathf::sign(diff) * std::min(std::abs(diff), std::abs(delta));
 				if (tako::mathf::abs(grid.x - move.targetX) < EPSILON)
 				{
 					grid.x = move.targetX;
 				}
 			}
-			if (move.targetY != grid.y)
+			if (grid.y != move.targetY)
 			{
-				grid.y += (move.targetY - grid.y) * move.gridSpeed * dt;
+				auto diff = move.targetY - grid.y;
+				auto delta = move.gridSpeed * dt;
+				grid.y += tako::mathf::sign(diff) * std::min(std::abs(diff), std::abs(delta));;
 				if (tako::mathf::abs(grid.y - move.targetY) < EPSILON)
 				{
 					grid.y = move.targetY;

@@ -56,7 +56,7 @@ struct GridObject
 		return { (int) std::round(x), (int) std::round(y) };
 	}
 };
-constexpr float EPSILON = 0.05;
+constexpr float EPSILON = 0.00005;
 struct MovingObject
 {
 	int targetX;
