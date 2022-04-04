@@ -5,6 +5,7 @@ struct DayStatus
 {
 	bool gaveMedicine;
 	bool gaveFood;
+	bool activity;
 };
 
 class Diary
@@ -91,7 +92,7 @@ public:
 	static bool IsDailyTasksDone()
 	{
 		auto& s = Instance();
-		return s.currentDay.gaveFood && s.currentDay.gaveMedicine;
+		return s.currentDay.gaveFood && s.currentDay.gaveMedicine && s.currentDay.activity;
 	}
 
 	static int GetDay()
@@ -114,6 +115,11 @@ public:
 		Instance().currentDay.gaveFood= true;
 	}
 
+	static void DidActivity()
+	{
+		Instance().currentDay.activity = true;
+	}
+
 private:
 	int dayNumber = 0;
 	DayStatus currentDay;
@@ -122,7 +128,7 @@ private:
 	{
 		std::vector{"I got some medicine for Peanut\nTo get him up to speed again", "And he needs his \nmunchies as well!"},
 		std::vector{"Still not strong enough\nto go outside!", "But I got something for him"},
-		std::vector{"I think it's ok to take a little\n walk in the garden today"},
+		std::vector{"It got better","Maybe it's ok to take a little\nwalk in the garden today"},
 		std::vector{"That walk was more taxing\nthan I anticipated", "But I found something that\nthat will cheer him up!"},
 		std::vector{"Taking a break was worth it","Let's play some ball today!"},
 		std::vector{"Huh, where is Peanut", "I think he is up to something"},

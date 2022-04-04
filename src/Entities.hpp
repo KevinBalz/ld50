@@ -4,6 +4,7 @@
 
 struct Dog
 {
+	std::optional<InventoryItem> heldItem;
 };
 
 using InteractionCallback = std::function<bool(tako::World&, tako::Entity, tako::Entity)>;
@@ -24,4 +25,9 @@ struct ItemSpawner
 	int y;
 	InventoryItem item;
 	int day = -1;
+};
+
+struct ThrownItem
+{
+	InventoryItem item;
 };

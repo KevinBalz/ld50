@@ -8,6 +8,11 @@ struct Tile
 	int x;
 	int y;
 
+	bool IsNeighbour(const Tile& other)
+	{
+		return (std::abs(x - other.x) + std::abs(y - other.y)) <= 1;
+	}
+
 	friend Tile operator+(const Tile& a, const FaceDelta& b)
 	{
 		return { a.x + b.x, a.y + b.y };

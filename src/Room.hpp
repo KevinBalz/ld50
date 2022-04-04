@@ -174,7 +174,7 @@ public:
 								{
 									auto& player = m_world.GetComponent<Player>(other);
 									player.RemoveHeldItem(item);
-									Diary::GaveFood();
+									Diary::DidActivity();
 								}
 							});
 							break;
@@ -296,9 +296,9 @@ public:
 		return false;
 	}
 
-	void SpawnItem(int x, int y, InventoryItem item)
+	tako::Entity SpawnItem(int x, int y, InventoryItem item)
 	{
-		m_world.Create
+		return m_world.Create
 		(
 			GridObject(x, y),
 			Pickup{item},
@@ -318,7 +318,7 @@ public:
 						auto& pickup = m_world.GetComponent<Pickup>(self);
 						auto& inter = m_world.GetComponent<Interactable>(self);
 						auto& player = m_world.GetComponent<Player>(other);
-						player.items.push_back(pickup.item);
+						player.items.push_front(pickup.item);
 						auto ptr = inter.callback;
 						m_world.Delete(self);
 						delete ptr;
@@ -335,6 +335,14 @@ public:
 		lastBump += dt;
 		if (newDay)
 		{
+			switch (Diary::GetDay())
+			{
+				case 1:
+				{
+					Diary::DidActivity();
+					break;
+				}
+			}
 			if (Diary::GetDay() != 7 || m_levelName == "House")
 			{
 				ReplenishSpawns();
@@ -439,6 +447,42 @@ public:
 									interacted = app.callback(m_world, e, ent, player.items[0]);
 								}
 							});
+							auto item =  player.items[0];
+							if (!interacted && item == InventoryItem::Ball)
+							{
+
+								m_world.IterateComps<tako::Entity, Dog>([&](auto e, Dog& dog)
+								{
+									auto faceDelta = GetFaceDelta(player.facing);
+									auto base = grid.GetTile();
+									int i;
+									Tile target;
+									for (i = 1; i <= 3; i++)
+									{
+										Tile t = {base.x + faceDelta.x * i, base.y + faceDelta.y * i};
+										auto free = Grid::IsTileEmpty(t, m_world, e);
+										if (!free)
+										{
+											i--;
+											break;
+										}
+										target = t;
+									}
+									if (i > 0)
+									{
+										player.items.pop_front();
+										AudioClips::Play("/Throw2.wav");
+										m_world.Create
+										(
+											GridObject(target.x, target.y),
+											SpriteRenderer{{8,8}, m_getTexture(GetItemPic(item)), {0, 0}},
+											ThrownItem{item}
+										);
+										interacted = true;
+									}
+
+								});
+							}
 						}
 					}
 					else
@@ -509,21 +553,71 @@ public:
 
 		m_world.IterateComps<tako::Entity, GridObject, MovingObject, Dog>([&](tako::Entity ent, GridObject& grid, MovingObject& move, Dog& dog)
 		{
-			/*
-			if (!DialogSystem::IsOpen() && !move.IsMoving(grid) && rand() % 250 == 1)
+			if (!DialogSystem::IsOpen() && !move.IsMoving(grid))
 			{
-				bool mvX = rand() % 2;
-				int sign = rand() % 2 ? 1 : -1;
-				Grid::Move(ent, mvX ? sign : 0, mvX ? 0 : sign, m_world);
-			}
-			 */
-			if (!move.IsMoving(grid))
-			{
-				auto target = Grid::GetNextTileToTarget(ent, playerPos, m_world);
-				if (target)
+				bool interacted = false;
+					m_world.IterateComps<tako::Entity, GridObject, Player>([&](tako::Entity e, GridObject& g, Player& p)
+					{
+						if (interacted)
+						{
+							return;
+						}
+						bool followPlayer = false;
+						if (dog.heldItem)
+						{
+							if (grid.GetTile().IsNeighbour(g.GetTile()))
+							{
+								AudioClips::Play("/Pickup.wav");
+								p.items.push_back(dog.heldItem.value());
+								dog.heldItem = {};
+								interacted = true;
+								return;
+							}
+							followPlayer = true;
+						}
+						if (std::find(p.items.begin(), p.items.end(), InventoryItem::DogFood) != p.items.end()
+							|| std::find(p.items.begin(), p.items.end(), InventoryItem::Bone) != p.items.end())
+						{
+							followPlayer = true;
+						}
+						if (followPlayer)
+						{
+							interacted = true;
+							auto target = Grid::GetNextTileToTarget(ent, g.GetTile(), m_world);
+							if (target)
+							{
+								auto t = target.value();
+								Grid::Move(ent, t.x - move.targetX, t.y - move.targetY, m_world);
+							}
+						}
+
+					});
+				m_world.IterateComps<tako::Entity, GridObject, ThrownItem>([&](tako::Entity e, GridObject& g, ThrownItem& th)
 				{
-					auto t = target.value();
-					Grid::Move(ent, t.x - move.targetX, t.y - move.targetY, m_world);
+					if (interacted)
+					{
+						return;
+					}
+					interacted = true;
+					if (grid.GetTile().IsNeighbour(g.GetTile()))
+					{
+						AudioClips::Play("/Fetch.wav");
+						dog.heldItem = th.item;
+						m_world.Delete(e);
+						return;
+					}
+					auto target = Grid::GetNextTileToTarget(ent, g.GetTile(), m_world);
+					if (target)
+					{
+						auto t = target.value();
+						Grid::Move(ent, t.x - move.targetX, t.y - move.targetY, m_world);
+					}
+				});
+				if (!interacted && rand() % 250 == 1)
+				{
+					bool mvX = rand() % 2;
+					int sign = rand() % 2 ? 1 : -1;
+					Grid::Move(ent, mvX ? sign : 0, mvX ? 0 : sign, m_world);
 				}
 			}
 		});

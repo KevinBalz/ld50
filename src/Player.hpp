@@ -1,13 +1,13 @@
 #pragma once
 #include "Facing.hpp"
 #include "Inventory.hpp"
-#include <vector>
+#include <deque>
 
 struct Player
 {
 	bool human;
 	FaceDirection facing;
-	std::vector<InventoryItem> items;
+	std::deque<InventoryItem> items;
 	bool inventoryOpen = false;
 	int inventorySlotSelection;
 
