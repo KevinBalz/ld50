@@ -120,24 +120,24 @@ private:
 
 	const std::array<std::vector<const char*>, 7> dailyAgendas =
 	{
-		std::vector{"I got some medicine for Peanut"},
-		std::vector{"Day 2"},
-		std::vector{"Day 3"},
-		std::vector{"Day 4"},
-		std::vector{"Day 5"},
-		std::vector{"Day 6"},
-		std::vector{"Day 7"}
+		std::vector{"I got some medicine for Peanut\nTo get him up to speed again", "And he needs his \nmunchies as well!"},
+		std::vector{"Still not strong enough\nto go outside!", "But I got something for him"},
+		std::vector{"I think it's ok to take a little\n walk in the garden today"},
+		std::vector{"That walk was more taxing\nthan I anticipated", "But I found something that\nthat will cheer him up!"},
+		std::vector{"Taking a break was worth it","Let's play some ball today!"},
+		std::vector{"Huh, where is Peanut", "I think he is up to something"},
+		std::vector{"I'm not sure if it's a good idea.", "But let's go to the park anyway", "I think there won't be a better time"}
 	};
 
 	const std::array<std::vector<const char*>, 8> nightThoughts =
 	{
 		std::vector{"Day 1"},
-		std::vector{"Give Treat", "Day 2"},
-		std::vector{"Day 3"},
-		std::vector{"Day 4"},
-		std::vector{"Day 5"},
-		std::vector{"Day 6"},
-		std::vector{"Day 7"},
+		std::vector{"I hope we can go out soon", "Time outside with him was the best", "Day 2"},
+		std::vector{"He really enjoyed his snack","I love seeing him so happy", "... Given the circumstances", "Day 3"},
+		std::vector{"Going outside was great", "I hope there will be a opportunity,","to go to the park one more time again", "Peanut really loves the park", "Day 4"},
+		std::vector{"Again not going to the park", "At least I could give him something", "But he deserves more", "Day 5"},
+		std::vector{"We used to play ball for hours everyday", "I wish we played more while we could","Day 6"},
+		std::vector{"Today he looked so alive", "He tries his best to cheer me up", "But it doesn't get better", "Day 7"},
 		std::vector{"Day 8"},
 	};
 

@@ -104,6 +104,21 @@
 					"Day": 3
 				}
 			}
+		],
+		"Pickup": [
+			{
+				"id": "Pickup",
+				"iid": "6ba8d540-8dc0-11ec-9dea-0b29fdc5146d",
+				"layer": "Entities",
+				"x": 80,
+				"y": 64,
+				"width": 8,
+				"height": 8,
+				"color": 4918479,
+				"customFields": {
+					"Item": "Ball"
+				}
+			}
 		]
 	}
 }

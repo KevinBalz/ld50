@@ -5,6 +5,7 @@
 #include "Renderer.hpp"
 #include <variant>
 #include "Routine.hpp"
+#include "AudioClips.hpp"
 
 using DialogCallback = std::function<void()>;
 using BoolReturn = std::function<bool()>;
@@ -65,11 +66,23 @@ public:
 			}
 			else if (s.closeDown <= 0)
 			{
-				if (s.charCountDown <= 0 && s.charDisp < s.m_dialog.size())
+				if (s.charCountDown <= 0)
 				{
-					s.charDisp++;
-					s.charCountDown = s.charDisp == s.m_dialog.size() ? s.m_charDelay * 6 : s.m_charDelay;
-					s.UpdateText(s.m_dialog.substr(0, s.charDisp));
+					if (s.charDisp < s.m_dialog.size())
+					{
+						s.charDisp++;
+						if (s.charDisp == s.m_dialog.size())
+						{
+							s.charCountDown =  s.m_charDelay * 3;
+							AudioClips::Play("/Message.wav");
+						}
+						else
+						{
+							s.charCountDown = s.m_charDelay;
+							tako::Audio::Play(*AudioClips::Load("/TextBlip.wav"));
+						}
+						s.UpdateText(s.m_dialog.substr(0, s.charDisp));
+					}
 				}
 				s.charCountDown -= dt;
 			}

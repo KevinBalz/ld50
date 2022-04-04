@@ -112,6 +112,7 @@ public:
 						//TODO: ask
 						dialog.push_back([=]() mutable
 						{
+							AudioClips::Play("/Sleep.wav");
 							Diary::StartNextDayRoutine([=]() mutable
 							{
 								newDay = true;
@@ -150,7 +151,8 @@ public:
 					DialogSystem::StartDialog(
 					{
 						"Oh, who is a good boy?!\nYes you are!",
-						"Wuff, GRRR!"
+						"Wufff, Wuf!",
+						"No, you're the best"
 					});
 					return true;
 				})},
@@ -166,7 +168,7 @@ public:
 						{
 							DialogSystem::StartDialog(
 							{
-								"Wuff Grr!\n(A Bone!)",
+								"Awoooooooooooo!\n(A Bone!)",
 								"(You're the best)",
 								[=]()
 								{
@@ -181,8 +183,8 @@ public:
 						{
 							DialogSystem::StartDialog(
 							{
-								"Wuff Grr!\n(A Bone!)",
-								"(You're the best)",
+								"*munch* *munch* *slurp*",
+								"(Yummy!)",
 								[=]()
 								{
 									auto& player = m_world.GetComponent<Player>(other);
@@ -206,7 +208,7 @@ public:
 							DialogSystem::StartDialog(
 							{
 								"Slllurp",
-								"(Tastes like nothing)",
+								"Like a champ",
 								[=]()
 								{
 									auto& player = m_world.GetComponent<Player>(other);
@@ -307,6 +309,7 @@ public:
 				{
 					return false;
 				}
+				tako::Audio::Play(*AudioClips::Load("/Pickup.wav"));
 				DialogSystem::StartDialog(
 				{
 					"Found " + GetItemName(item) + "!",
@@ -328,6 +331,8 @@ public:
 
 	void Update(tako::Input* input, float dt)
 	{
+		static float lastBump = 0;
+		lastBump += dt;
 		if (newDay)
 		{
 			if (Diary::GetDay() != 7 || m_levelName == "House")
@@ -347,8 +352,10 @@ public:
 
 			newDay = false;
 		}
+		Tile playerPos;
 		m_world.IterateComps<tako::Entity, GridObject, MovingObject, Player>([&](tako::Entity ent, GridObject& grid, MovingObject& move, Player& player)
 		{
+			playerPos = grid.GetTile();
 			if (!DialogSystem::IsOpen())
 			{
 				if (!move.IsMoving(grid))
@@ -484,7 +491,16 @@ public:
 							{
 								player.facing = FaceDirection::Down;
 							}
-							Grid::Move(ent, xDelta, yDelta, m_world);
+							auto col = Grid::Move(ent, xDelta, yDelta, m_world);
+							if (!col)
+							{
+								AudioClips::Play("/Step.wav");
+							}
+							else if (lastBump >= 0.5f)
+							{
+								AudioClips::Play("/Bump.wav");
+								lastBump = 0;
+							}
 						}
 					}
 				}
@@ -493,11 +509,22 @@ public:
 
 		m_world.IterateComps<tako::Entity, GridObject, MovingObject, Dog>([&](tako::Entity ent, GridObject& grid, MovingObject& move, Dog& dog)
 		{
+			/*
 			if (!DialogSystem::IsOpen() && !move.IsMoving(grid) && rand() % 250 == 1)
 			{
 				bool mvX = rand() % 2;
 				int sign = rand() % 2 ? 1 : -1;
 				Grid::Move(ent, mvX ? sign : 0, mvX ? 0 : sign, m_world);
+			}
+			 */
+			if (!move.IsMoving(grid))
+			{
+				auto target = Grid::GetNextTileToTarget(ent, playerPos, m_world);
+				if (target)
+				{
+					auto t = target.value();
+					Grid::Move(ent, t.x - move.targetX, t.y - move.targetY, m_world);
+				}
 			}
 		});
 		m_world.IterateComps<GridObject, MovingObject>([&](GridObject& grid, MovingObject& move)
