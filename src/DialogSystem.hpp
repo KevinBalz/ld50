@@ -103,7 +103,7 @@ public:
 			drawer->DrawImage(0-texX/2, 0+texY/2, texX, texY, s.m_nightTexture.handle);
 		}
 
-		if (!IsOpen())
+		if (!InternalOpen())
 		{
 			return;
 		}
@@ -129,10 +129,15 @@ public:
 		s.StartDialogPart(0);
 	}
 
+	static void SetBlock(bool block)
+	{
+		Instance().block = block;
+	}
+
 	static bool IsOpen()
 	{
 		auto& s = Instance();
-		return s.m_waitCallback || s.m_dialog.size() > 0 || s.closeDown > 0 || s.m_activeDialog.GetPartCount() > s.dialogPart;
+		return s.block || s.m_showNightText || InternalOpen();
 	}
 
 	static void NightTimeReading(std::vector<const char*> text, std::optional<std::function<void()>> finishCallback)
@@ -190,6 +195,12 @@ public:
 	}
 
 private:
+	static bool InternalOpen()
+	{
+		auto& s = Instance();
+		return s.m_waitCallback || s.m_dialog.size() > 0 || s.closeDown > 0 || s.m_activeDialog.GetPartCount() > s.dialogPart;
+	}
+
 	void StartDialogPart(int index)
 	{
 		dialogPart = index;
@@ -265,5 +276,6 @@ private:
 	int dialogPart = 0;
 	float closeDown = 0;
 	float m_charDelay = 0.075f;
+	bool block = false;
 	tako::OpenGLPixelArtDrawer* m_drawer;
 };

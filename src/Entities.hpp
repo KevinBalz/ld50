@@ -31,3 +31,5 @@ struct ThrownItem
 {
 	InventoryItem item;
 };
+
+struct Door {};

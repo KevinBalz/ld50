@@ -102,19 +102,18 @@ public:
 						return false;
 					}
 					std::vector<DialogPart> dialog;
-					dialog.push_back("I could really get some sleep.");
 					if (Diary::IsDailyTasksDone())
 					{
-
-						dialog.push_back("I have done everything\nnecessary for today.");
-						dialog.push_back("I could go to sleep or\nspend more precious time");
-						dialog.push_back("with Peanut.\nWhile I still can.");
-						//TODO: ask
+						dialog.push_back("I have done everything\nI could for today.");
+						dialog.push_back("Time to get some sleep");
+						dialog.push_back("I wish I could do more");
 						dialog.push_back([=]() mutable
 						{
 							AudioClips::Play("/Sleep.wav");
+							DialogSystem::SetBlock(true);
 							Diary::StartNextDayRoutine([=]() mutable
 							{
+								DialogSystem::SetBlock(false);
 								newDay = true;
 							});
 						});
@@ -122,14 +121,20 @@ public:
 					else
 					{
 						auto status = Diary::GetDayStatus();
+						dialog.push_back("I could really get some sleep.");
 						dialog.push_back("But I have still things to do:");
 						if (!status.gaveFood)
 						{
-							dialog.push_back("Peanut needs something\nto munch on");
+							dialog.push_back("Peanut needs something\nto munch on.");
 						}
 						if (!status.gaveMedicine)
 						{
 							dialog.push_back("Peanut needs his medicine.");
+						}
+						if (!status.activity)
+						{
+							dialog.push_back("Spend more precious time\nwith Peanut.");
+							dialog.push_back("While I still can.");
 						}
 					}
 					DialogSystem::StartDialog({std::move(dialog)});
@@ -170,6 +175,22 @@ public:
 							{
 								"Awoooooooooooo!\n(A Bone!)",
 								"(You're the best)",
+								[=]()
+								{
+									auto& player = m_world.GetComponent<Player>(other);
+									player.RemoveHeldItem(item);
+									Diary::DidActivity();
+								}
+							});
+							break;
+						}
+						case InventoryItem::Snack:
+						{
+							DialogSystem::StartDialog(
+							{
+								"*sniff* awoo",
+								"*munch*",
+								"(Amazing! But why?\nWas I a good boy?",
 								[=]()
 								{
 									auto& player = m_world.GetComponent<Player>(other);
@@ -241,6 +262,19 @@ public:
 				ItemSpawner{x, y, item, day}
 			);
 		});
+
+		if (Diary::GetDay() < 3)
+		{
+			loadEntityType("Door", [&](int x, int y, JSON_Object *custom)
+			{
+				m_world.Create
+				(
+					GridObject(x, y),
+					SpriteRenderer{{8, 8}, getTexture("/Door.png"), {0, 0}},
+					Door()
+				);
+			});
+		}
 
 		loadEntityType("ParkWarp", [&](int x, int y, JSON_Object* custom)
 		{
@@ -340,6 +374,19 @@ public:
 				case 1:
 				{
 					Diary::DidActivity();
+					break;
+				}
+				case 3:
+				{
+					std::vector<tako::Entity> del;
+					m_world.IterateComps<tako::Entity, Door>([&](tako::Entity d, Door& dd)
+					{
+						del.push_back(d);
+					});
+					for (auto d : del)
+					{
+						m_world.Delete(d);
+					}
 					break;
 				}
 			}

@@ -81,13 +81,13 @@
 				"iid": "b7d99ac0-8dc0-11ec-9dea-85879f0c9106",
 				"layer": "Entities",
 				"x": 64,
-				"y": 48,
+				"y": 16,
 				"width": 8,
 				"height": 8,
 				"color": 6025692,
 				"customFields": {
 					"Item": "Bone",
-					"Day": 2
+					"Day": 4
 				}
 			},
 			{
@@ -103,21 +103,58 @@
 					"Item": "Stick",
 					"Day": 3
 				}
-			}
-		],
-		"Pickup": [
+			},
 			{
-				"id": "Pickup",
-				"iid": "6ba8d540-8dc0-11ec-9dea-0b29fdc5146d",
+				"id": "ItemSpawner",
+				"iid": "93bd6270-8dc0-11ec-9dea-f9ed75015002",
 				"layer": "Entities",
-				"x": 80,
-				"y": 64,
+				"x": 88,
+				"y": 32,
 				"width": 8,
 				"height": 8,
-				"color": 4918479,
+				"color": 6025692,
 				"customFields": {
-					"Item": "Ball"
+					"Item": "Snack",
+					"Day": 2
 				}
+			},
+			{
+				"id": "ItemSpawner",
+				"iid": "747f7950-8dc0-11ec-9dea-cd4227facf1b",
+				"layer": "Entities",
+				"x": 112,
+				"y": 16,
+				"width": 8,
+				"height": 8,
+				"color": 6025692,
+				"customFields": {
+					"Item": "Ball",
+					"Day": 5
+				}
+			}
+		],
+		"Door": [
+			{
+				"id": "Door",
+				"iid": "bb20c480-8dc0-11ec-9dea-ff67775dd830",
+				"layer": "Entities",
+				"x": 72,
+				"y": 24,
+				"width": 8,
+				"height": 8,
+				"color": 9755059,
+				"customFields" : {}
+			},
+			{
+				"id": "Door",
+				"iid": "bc29d010-8dc0-11ec-9dea-c9953ab85b4f",
+				"layer": "Entities",
+				"x": 80,
+				"y": 24,
+				"width": 8,
+				"height": 8,
+				"color": 9755059,
+				"customFields" : {}
 			}
 		]
 	}
